@@ -1,0 +1,5 @@
+Rental Record for Tom
+	aaa	9.0
+	bbb	6.5
+Amount owned is 15.5
+You earned 3 frequent renter points
