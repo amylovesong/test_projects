@@ -9,9 +9,6 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import android.text.SpannableString;
-import android.text.Spanned;
-import android.text.style.AbsoluteSizeSpan;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -25,7 +22,7 @@ import com.romainpiel.shimmer.ShimmerViewHelper;
  */
 public class SlideButton extends Button implements ShimmerViewBase {
     private static final String TAG = SlideButton.class.getSimpleName();
-    private static final float ACTION_CONFIRM_DISTANCE_FRACTION = 0.4f;
+    private static final float ACTION_CONFIRM_DISTANCE_FRACTION = 0.3f;
 
     private float x1;
     private float x2;
@@ -98,7 +95,13 @@ public class SlideButton extends Button implements ShimmerViewBase {
                 logMsg("ACTION_UP x2: " + x2 + " x2 - x1:" + (x2 - x1) + " getWidth(): " +getWidth());
                 if ((x2 - x1) <= getWidth() * ACTION_CONFIRM_DISTANCE_FRACTION){
                     logMsg("action not confirmed");
-                    reset();
+                    // 未确认操作，退回原位
+                    final float curX = getX();
+                    final float targetX = mViewInitialX;
+                    final long duration = (long) (Math.abs(targetX - curX) /getWidth() * 1000);
+                    ObjectAnimator animator = ObjectAnimator.ofFloat(SlideButton.this, "X", curX, targetX);
+                    animator.setDuration(duration);
+                    animator.start();
                 } else {
                     logMsg("action confirmed");
                     // 滑动手势抬起后，剩余部分自动滑出
@@ -106,8 +109,9 @@ public class SlideButton extends Button implements ShimmerViewBase {
                     SlideButton.this.setBackgroundResource(R.color.provider_color_bottom_bar_online_bg_pressed);
                     final float curX = getX();
                     final float targetX = mViewInitialX + getWidth();
+                    final long duration = (long) (Math.abs(targetX - curX) /getWidth() * 1000);
                     ObjectAnimator animator = ObjectAnimator.ofFloat(SlideButton.this, "X", curX, targetX);
-                    animator.setDuration((long) ((targetX - curX) / getWidth() * 1000));
+                    animator.setDuration(duration);
                     animator.addListener(new AnimatorListenerAdapter() {
                         @Override
                         public void onAnimationEnd(Animator animation) {
@@ -121,19 +125,20 @@ public class SlideButton extends Button implements ShimmerViewBase {
                 break;
             case MotionEvent.ACTION_MOVE:
                 x2 = event.getX();
+                logMsg("ACTION_MOVE x2: " + x2);
                 if (x2 > x1) {// move from left to right
-//                    updateScrollX(x1 - x2);
-                    mMoveDeltaX = x2 - x1;
+//                    mMoveDeltaX = x2 - x1;
                     logMsg("ACTION_MOVE mPreMoveDeltaX: " + mPreMoveDeltaX + " mMoveDeltaX: " + mMoveDeltaX);
-                    // 避免滑动时太过灵敏导致UI抖动
-                    if (mMoveDeltaX <= getWidth() * 0.05f) {
-                        break;
-                    }
-                    if (mMoveDeltaX > mPreMoveDeltaX) {
-                        logMsg("ACTION_MOVE updateX");
-                        updateX(mMoveDeltaX);
-                        mPreMoveDeltaX = mMoveDeltaX;
-                    }
+                    updateX(x2);
+//                    // 避免滑动时太过灵敏导致UI抖动
+//                    if (mMoveDeltaX <= getWidth() * 0.05f) {
+//                        break;
+//                    }
+//                    if (mMoveDeltaX > mPreMoveDeltaX) {
+//                        logMsg("ACTION_MOVE updateX");
+//                        updateX(mMoveDeltaX);
+//                        mPreMoveDeltaX = mMoveDeltaX;
+//                    }
 //                    if (mPreMoveDeltaX == 0f) {
 //                        mPreMoveDeltaX = mMoveDeltaX;
 //                    } else {
@@ -142,6 +147,12 @@ public class SlideButton extends Button implements ShimmerViewBase {
                 break;
         }
         return super.onTouchEvent(event);
+    }
+
+    public void reset() {
+        setVisibility(VISIBLE);
+        updateX(mViewInitialX);
+        setBackgroundResource(R.drawable.provider_bottom_bar_online_bg_selector);
     }
 
     private void actionConfirmed() {
@@ -163,12 +174,6 @@ public class SlideButton extends Button implements ShimmerViewBase {
     private void updateX(float x) {
         setX(x);
         invalidate();
-    }
-
-    public void reset() {
-        setVisibility(VISIBLE);
-        updateX(mViewInitialX);
-        setBackgroundResource(R.drawable.provider_bottom_bar_online_bg_selector);
     }
 
     public void setOnSlideActionListener(OnSlideActionListener onSlideActionListener) {
