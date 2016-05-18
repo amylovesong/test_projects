@@ -24,18 +24,25 @@ public class SlideButton extends Button implements ShimmerViewBase {
     private static final String TAG = SlideButton.class.getSimpleName();
     private static final float ACTION_CONFIRM_DISTANCE_FRACTION = 0.3f;
 
-    private float x1;
-    private float x2;
     /**
-     * View 在滑动前的x坐标（需考虑padding，margin的情况）
+     * 由于滑动的时候会更新View的x坐标，因此使用MotionEvent的rawX来计算
      */
-    private float mViewInitialX;
+    private float mRawXStart;
+    private float mRawXMove;
+    private float mRawXEnd;
+    private float mPreviousRawXMove;
     private float mMoveDeltaX;
     private float mPreMoveDeltaX = 0f;
+    /**
+     * View 初始状态的x坐标（滑动时需考虑padding，margin的情况）
+     */
+    private float mViewInitialX;
+    private int mViewWidth;
 
     private OnSlideActionListener mOnSlideActionListener;
 
     private ShimmerViewHelper mShimmerViewHelper;
+    private boolean mStartMove;
 
     public SlideButton(Context context) {
         super(context);
@@ -53,9 +60,6 @@ public class SlideButton extends Button implements ShimmerViewBase {
     }
 
     private void init(AttributeSet attrs) {
-        mViewInitialX = getX();
-        logMsg("init mViewInitialX: " + mViewInitialX);
-
         mShimmerViewHelper = new ShimmerViewHelper(this, getPaint(), attrs);
         mShimmerViewHelper.setPrimaryColor(getCurrentTextColor());
     }
@@ -63,10 +67,12 @@ public class SlideButton extends Button implements ShimmerViewBase {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        logMsg("onLayout mViewInitialX: " + mViewInitialX + " getWidth: " + getWidth() + " changed: " + changed);
         if (changed) {
             mViewInitialX = getX();
+            mViewWidth = getWidth();
+            logMsg("onLayout mViewInitialX: " + mViewInitialX + " mViewWidth: " + mViewWidth);
 
+            // Set drawRight for arrows
             final Paint paint=new Paint();
             final Rect textBounds = new Rect();
             paint.setTextSize(getTextSize());
@@ -87,13 +93,17 @@ public class SlideButton extends Button implements ShimmerViewBase {
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                x1 = event.getX();
-                logMsg("ACTION_DOWN x1: " + x1);
+                mStartMove = false;
+                mRawXStart = event.getRawX();
+                mPreviousRawXMove = mRawXStart;
+                logMsg("ACTION_DOWN mRawXStart: " + mRawXStart);
                 break;
             case MotionEvent.ACTION_UP:
-                x2 = event.getX();
-                logMsg("ACTION_UP x2: " + x2 + " x2 - x1:" + (x2 - x1) + " getWidth(): " +getWidth());
-                if ((x2 - x1) <= getWidth() * ACTION_CONFIRM_DISTANCE_FRACTION){
+                mStartMove = false;
+                mRawXEnd = event.getRawX();
+                mMoveDeltaX = mRawXEnd - mRawXStart;
+                logMsg("ACTION_UP mRawXEnd: " + mRawXEnd + " mMoveDeltaX:" + mMoveDeltaX + " mViewWidth: " + mViewWidth);
+                if (mMoveDeltaX <= mViewWidth * ACTION_CONFIRM_DISTANCE_FRACTION){
                     logMsg("action not confirmed");
                     // 未确认操作，退回原位
                     final float curX = getX();
@@ -124,26 +134,26 @@ public class SlideButton extends Button implements ShimmerViewBase {
                 mPreMoveDeltaX = 0f;
                 break;
             case MotionEvent.ACTION_MOVE:
-                x2 = event.getX();
-                logMsg("ACTION_MOVE x2: " + x2);
-                if (x2 > x1) {// move from left to right
-//                    mMoveDeltaX = x2 - x1;
-                    logMsg("ACTION_MOVE mPreMoveDeltaX: " + mPreMoveDeltaX + " mMoveDeltaX: " + mMoveDeltaX);
-                    updateX(x2);
-//                    // 避免滑动时太过灵敏导致UI抖动
-//                    if (mMoveDeltaX <= getWidth() * 0.05f) {
-//                        break;
-//                    }
+                mRawXMove = event.getRawX();
+                // 最新思路：用滑动的delta值来更新view的x坐标，在每次更新前检查即将更新的值是否在初始位置的左边，如果是，则不更新
+
+                logMsg("ACTION_MOVE mRawXMove: " + mRawXMove + " mPreviousRawXMove: " + mPreviousRawXMove);
+                // 每次按下到开始滑动必须先从左向右（即从按下到开始滑动不能从右向左），滑动过程中可以从右向左
+                mMoveDeltaX = mRawXMove - mPreviousRawXMove;
+                logMsg("ACTION_MOVE mStartMove: " + mStartMove + " mMoveDeltaX: " + mMoveDeltaX);
+                if (!mStartMove && mMoveDeltaX > mViewWidth * 0.02f) {
+                    mStartMove = true;
+                }
+                if (mStartMove) {
+                    logMsg("ACTION_MOVE updateX");
+                    updateX(mMoveDeltaX);
 //                    if (mMoveDeltaX > mPreMoveDeltaX) {
 //                        logMsg("ACTION_MOVE updateX");
 //                        updateX(mMoveDeltaX);
 //                        mPreMoveDeltaX = mMoveDeltaX;
 //                    }
-//                    if (mPreMoveDeltaX == 0f) {
-//                        mPreMoveDeltaX = mMoveDeltaX;
-//                    } else {
-//                    }
                 }
+//                mPreviousRawXMove = mRawXMove;
                 break;
         }
         return super.onTouchEvent(event);
