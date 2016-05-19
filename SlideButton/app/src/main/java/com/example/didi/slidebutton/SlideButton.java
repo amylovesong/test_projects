@@ -30,9 +30,7 @@ public class SlideButton extends Button implements ShimmerViewBase {
     private float mRawXStart;
     private float mRawXMove;
     private float mRawXEnd;
-    private float mPreviousRawXMove;
     private float mMoveDeltaX;
-    private float mPreMoveDeltaX = 0f;
     /**
      * View 初始状态的x坐标（滑动时需考虑padding，margin的情况）
      */
@@ -42,7 +40,6 @@ public class SlideButton extends Button implements ShimmerViewBase {
     private OnSlideActionListener mOnSlideActionListener;
 
     private ShimmerViewHelper mShimmerViewHelper;
-    private boolean mStartMove;
 
     public SlideButton(Context context) {
         super(context);
@@ -93,13 +90,10 @@ public class SlideButton extends Button implements ShimmerViewBase {
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                mStartMove = false;
                 mRawXStart = event.getRawX();
-                mPreviousRawXMove = mRawXStart;
                 logMsg("ACTION_DOWN mRawXStart: " + mRawXStart);
                 break;
             case MotionEvent.ACTION_UP:
-                mStartMove = false;
                 mRawXEnd = event.getRawX();
                 mMoveDeltaX = mRawXEnd - mRawXStart;
                 logMsg("ACTION_UP mRawXEnd: " + mRawXEnd + " mMoveDeltaX:" + mMoveDeltaX + " mViewWidth: " + mViewWidth);
@@ -131,29 +125,16 @@ public class SlideButton extends Button implements ShimmerViewBase {
                     });
                     animator.start();
                 }
-                mPreMoveDeltaX = 0f;
                 break;
             case MotionEvent.ACTION_MOVE:
                 mRawXMove = event.getRawX();
-                // 最新思路：用滑动的delta值来更新view的x坐标，在每次更新前检查即将更新的值是否在初始位置的左边，如果是，则不更新
-
-                logMsg("ACTION_MOVE mRawXMove: " + mRawXMove + " mPreviousRawXMove: " + mPreviousRawXMove);
-                // 每次按下到开始滑动必须先从左向右（即从按下到开始滑动不能从右向左），滑动过程中可以从右向左
-                mMoveDeltaX = mRawXMove - mPreviousRawXMove;
-                logMsg("ACTION_MOVE mStartMove: " + mStartMove + " mMoveDeltaX: " + mMoveDeltaX);
-                if (!mStartMove && mMoveDeltaX > mViewWidth * 0.02f) {
-                    mStartMove = true;
+                // 用滑动的delta值来更新view的x坐标，即将更新的值不可超出view的初始位置
+                mMoveDeltaX = mRawXMove - mRawXStart;
+                logMsg("ACTION_MOVE mRawXMove: " + mRawXMove + " mRawXStart: " + mRawXStart + " mMoveDeltaX: " + mMoveDeltaX);
+                if (Math.abs(mMoveDeltaX) > mViewWidth * 0.02f) {
+                    final float targetX = mMoveDeltaX > mViewInitialX ? mMoveDeltaX : mViewInitialX;
+                    updateX(targetX);
                 }
-                if (mStartMove) {
-                    logMsg("ACTION_MOVE updateX");
-                    updateX(mMoveDeltaX);
-//                    if (mMoveDeltaX > mPreMoveDeltaX) {
-//                        logMsg("ACTION_MOVE updateX");
-//                        updateX(mMoveDeltaX);
-//                        mPreMoveDeltaX = mMoveDeltaX;
-//                    }
-                }
-//                mPreviousRawXMove = mRawXMove;
                 break;
         }
         return super.onTouchEvent(event);
