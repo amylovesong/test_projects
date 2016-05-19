@@ -1,17 +1,18 @@
 package com.example.didi.slidebutton;
 
+import android.animation.ObjectAnimator;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.ProgressBar;
 
 import com.romainpiel.shimmer.Shimmer;
-import com.romainpiel.shimmer.ShimmerButton;
-import com.romainpiel.shimmer.ShimmerTextView;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, SlideButton.OnSlideActionListener {
     private SlideButton mSlideButton;
     private Shimmer shimmer;
-    private ShimmerButton shimmerView;
+    private ProgressBar mLoadingView;
+    private ObjectAnimator animator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,12 +21,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         findViewById(R.id.reset_button).setOnClickListener(this);
         mSlideButton = (SlideButton) findViewById(R.id.slide_button);
-//        shimmerView = (ShimmerButton) findViewById(R.id.shimmer);
+        mSlideButton.setOnSlideActionListener(this);
+
+        mLoadingView = (ProgressBar) findViewById(R.id.slide_button_progress);
+        mLoadingView.setAlpha(0);
     }
 
     @Override
     public void onClick(View v) {
         mSlideButton.reset();
+        animator.cancel();
+        mLoadingView.setAlpha(0);
 
         toggleAnimation();
     }
@@ -40,4 +46,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    @Override
+    public void onActionConfirmed() {
+        animator = ObjectAnimator.ofFloat(mLoadingView, "Alpha", 0, 255);
+        animator.setDuration(2000);
+        animator.start();
+    }
 }
