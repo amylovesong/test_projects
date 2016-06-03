@@ -30,7 +30,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         mSlideButton.reset();
-        animator.cancel();
+        if (animator != null) {
+            animator.cancel();
+        }
         mLoadingView.setAlpha(0);
 
         toggleAnimation();

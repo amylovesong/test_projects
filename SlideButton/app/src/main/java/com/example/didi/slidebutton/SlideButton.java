@@ -8,6 +8,7 @@ import android.content.res.ColorStateList;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -70,19 +71,19 @@ public class SlideButton extends Button implements ShimmerViewBase {
             logMsg("onLayout mViewInitialX: " + mViewInitialX + " mViewWidth: " + mViewWidth);
 
             // Set drawRight for arrows
-            final Paint paint=new Paint();
-            final Rect textBounds = new Rect();
-            paint.setTextSize(getTextSize());
-            paint.getTextBounds(getText().toString(), 0, getText().length(), textBounds);
-            logMsg("textBounds.centerX() " + textBounds.centerX() + " textBounds.right: " + textBounds.right
-                    + " textBounds.left:" + textBounds.left);
-
-            final Drawable[] drawables = getCompoundDrawables();
-            final Drawable drawableRight = getResources().getDrawable(R.drawable.sofa_slide_icon_arrow);
-
-            final int x = - (getWidth() / 2 - textBounds.centerX() - 32 - 16 );
-            drawableRight.setBounds(x, 0, x + 32, 32);
-            setCompoundDrawables(drawables[0], drawables[1], drawableRight, drawables[3]);
+//            final Paint paint=new Paint();
+//            final Rect textBounds = new Rect();
+//            paint.setTextSize(getTextSize());
+//            paint.getTextBounds(getText().toString(), 0, getText().length(), textBounds);
+//            logMsg("textBounds.centerX() " + textBounds.centerX() + " textBounds.right: " + textBounds.right
+//                    + " textBounds.left:" + textBounds.left);
+//
+//            final Drawable[] drawables = getCompoundDrawables();
+//            final Drawable drawableRight = getResources().getDrawable(R.drawable.sofa_slide_icon_arrow);
+//
+//            final int x = - (getWidth() / 2 - textBounds.centerX() - 32 - 16 );
+//            drawableRight.setBounds(x, 0, x + 32, 32);
+//            setCompoundDrawables(drawables[0], drawables[1], drawableRight, drawables[3]);
         }
     }
 
@@ -251,6 +252,32 @@ public class SlideButton extends Button implements ShimmerViewBase {
             mShimmerViewHelper.onDraw();
         }
         super.onDraw(canvas);
+
+        final Paint originalPaint = getPaint();
+        final Rect textBounds = new Rect();
+        originalPaint.getTextBounds(getText().toString(), 0, getText().length(), textBounds);
+        logMsg("textBounds.centerX(): " + textBounds.centerX() + " textBounds.right: " + textBounds.right);
+
+        final String text = ">";
+        final Paint arrowPaint = new Paint(originalPaint);
+        arrowPaint.setTextScaleX(0.5f);
+        arrowPaint.setTextSize(getTextSize() * 1.4f);
+        arrowPaint.setTypeface(Typeface.SERIF);
+
+        final Rect arrowBounds = new Rect();
+        arrowPaint.getTextBounds(text, 0, text.length(), arrowBounds);
+        logMsg("arrowBounds.centerX(): " + arrowBounds.centerX() + " arrowBounds.width(): " + arrowBounds.width());
+        final int arrowWidth = arrowBounds.width();
+        final int gap = 12;
+        final int textCenterXOffset = arrowWidth + gap / 2;
+        setPadding(0, 0, textCenterXOffset, 0);// button本身的text的向左偏移
+
+        // Draw two arrow
+        final int x = getWidth() / 2 + textBounds.centerX() + gap - textCenterXOffset;// arrow向左偏移
+        final int y = getHeight() / 2 + 34;
+        canvas.drawText(text, x, y, arrowPaint);
+        arrowPaint.setAlpha(115);
+        canvas.drawText(text, x + arrowWidth, y, arrowPaint);
     }
 
     public interface OnSlideActionListener {
