@@ -3,17 +3,21 @@ package com.example.didi.slidebutton;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.RotateDrawable;
+import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.widget.Button;
+import android.view.animation.LinearInterpolator;
+import android.widget.ImageButton;
 
 import com.romainpiel.shimmer.ShimmerViewBase;
 import com.romainpiel.shimmer.ShimmerViewHelper;
@@ -21,7 +25,7 @@ import com.romainpiel.shimmer.ShimmerViewHelper;
 /**
  * Created by sxl on 16/5/15.
  */
-public class SlideButton extends Button implements ShimmerViewBase {
+public class SlideButton extends ImageButton implements ShimmerViewBase {
     private static final String TAG = SlideButton.class.getSimpleName();
     private static final float ACTION_CONFIRM_DISTANCE_FRACTION = 0.3f;
 
@@ -41,6 +45,14 @@ public class SlideButton extends Button implements ShimmerViewBase {
     private OnSlideActionListener mOnSlideActionListener;
 
     private ShimmerViewHelper mShimmerViewHelper;
+    private float mTranslateX;
+
+    private TextPaint mTextPaint;
+    private String mText = "右滑到达车站";
+    private Rect mTextBounds;
+    private ObjectAnimator mLoadingAnimator;
+    private boolean mLoading = false;
+    private RotateDrawable mLoadingDrawable;
 
     public SlideButton(Context context) {
         super(context);
@@ -58,6 +70,30 @@ public class SlideButton extends Button implements ShimmerViewBase {
     }
 
     private void init(AttributeSet attrs) {
+        mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        mTextPaint.density = getResources().getDisplayMetrics().density;
+
+        mTextPaint.setColor(Color.WHITE);
+        mTextPaint.setTextAlign(Paint.Align.CENTER);
+        mTextPaint.setTextSize(60);
+        mTextBounds = new Rect();
+
+        setImageResource(android.R.color.transparent);
+        setBackgroundResource(R.color.provider_color_orange);
+        mLoadingDrawable = (RotateDrawable) getResources().getDrawable(R.drawable.provider_progress_button_loading);
+        mLoadingAnimator = ObjectAnimator.ofInt(mLoadingDrawable, "Level", 0, 10000);
+        mLoadingAnimator.setInterpolator(new LinearInterpolator());
+        mLoadingAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        mLoadingAnimator.setDuration(800);
+        mLoadingAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                logMsg("mLoadingAnimator onAnimationEnd");
+                mLoadingDrawable.setLevel(0);
+            }
+        });
+
         mShimmerViewHelper = new ShimmerViewHelper(this, getPaint(), attrs);
         mShimmerViewHelper.setPrimaryColor(getCurrentTextColor());
     }
@@ -69,26 +105,15 @@ public class SlideButton extends Button implements ShimmerViewBase {
             mViewInitialX = getX();
             mViewWidth = getWidth();
             logMsg("onLayout mViewInitialX: " + mViewInitialX + " mViewWidth: " + mViewWidth);
-
-            // Set drawRight for arrows
-//            final Paint paint=new Paint();
-//            final Rect textBounds = new Rect();
-//            paint.setTextSize(getTextSize());
-//            paint.getTextBounds(getText().toString(), 0, getText().length(), textBounds);
-//            logMsg("textBounds.centerX() " + textBounds.centerX() + " textBounds.right: " + textBounds.right
-//                    + " textBounds.left:" + textBounds.left);
-//
-//            final Drawable[] drawables = getCompoundDrawables();
-//            final Drawable drawableRight = getResources().getDrawable(R.drawable.sofa_slide_icon_arrow);
-//
-//            final int x = - (getWidth() / 2 - textBounds.centerX() - 32 - 16 );
-//            drawableRight.setBounds(x, 0, x + 32, 32);
-//            setCompoundDrawables(drawables[0], drawables[1], drawableRight, drawables[3]);
         }
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        logMsg("onTouchEvent event: " + event + " mLoading: " + mLoading);
+        if (mLoading) {
+            return true;
+        }
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mRawXStart = event.getRawX();
@@ -101,21 +126,21 @@ public class SlideButton extends Button implements ShimmerViewBase {
                 if (mMoveDeltaX <= mViewWidth * ACTION_CONFIRM_DISTANCE_FRACTION){
                     logMsg("action not confirmed");
                     // 未确认操作，退回原位
-                    final float curX = getX();
-                    final float targetX = mViewInitialX;
+                    final float curX = mTranslateX;
+                    final float targetX = 0;
                     final long duration = (long) (Math.abs(targetX - curX) /getWidth() * 1000);
-                    ObjectAnimator animator = ObjectAnimator.ofFloat(SlideButton.this, "X", curX, targetX);
+                    ObjectAnimator animator = ObjectAnimator.ofFloat(SlideButton.this, "SlideX", curX, targetX);
                     animator.setDuration(duration);
                     animator.start();
                 } else {
                     logMsg("action confirmed");
                     // 滑动手势抬起后，剩余部分自动滑出
                     // 保持按下时的颜色
-                    SlideButton.this.setBackgroundResource(R.color.provider_color_bottom_bar_online_bg_pressed);
-                    final float curX = getX();
-                    final float targetX = mViewInitialX + getWidth();
+//                    SlideButton.this.setBackgroundResource(R.color.provider_color_bottom_bar_online_bg_pressed);
+                    final float curX = mTranslateX;
+                    final float targetX = 0 + getWidth();
                     final long duration = (long) (Math.abs(targetX - curX) /getWidth() * 1000);
-                    ObjectAnimator animator = ObjectAnimator.ofFloat(SlideButton.this, "X", curX, targetX);
+                    ObjectAnimator animator = ObjectAnimator.ofFloat(SlideButton.this, "SlideX", curX, targetX);
                     animator.setDuration(duration);
                     animator.addListener(new AnimatorListenerAdapter() {
                         @Override
@@ -133,7 +158,9 @@ public class SlideButton extends Button implements ShimmerViewBase {
                 mMoveDeltaX = mRawXMove - mRawXStart;
                 logMsg("ACTION_MOVE mRawXMove: " + mRawXMove + " mRawXStart: " + mRawXStart + " mMoveDeltaX: " + mMoveDeltaX);
                 if (Math.abs(mMoveDeltaX) > mViewWidth * 0.02f) {
-                    final float targetX = mMoveDeltaX > mViewInitialX ? mMoveDeltaX : mViewInitialX;
+                    final float targetX = mMoveDeltaX > mViewInitialX ? mMoveDeltaX : 0;
+//                            mViewInitialX;
+                    setImageResource(R.color.provider_color_bottom_bar_online_bg_pressed);
                     updateX(targetX);
                 }
                 break;
@@ -142,34 +169,128 @@ public class SlideButton extends Button implements ShimmerViewBase {
     }
 
     public void reset() {
-        setVisibility(VISIBLE);
-        updateX(mViewInitialX);
-        setBackgroundResource(R.drawable.provider_bottom_bar_online_bg_selector);
+//        setVisibility(VISIBLE);
+        stopLoading();
+        updateX(0);
+//        setBackgroundResource(R.drawable.provider_bottom_bar_online_bg_selector);
     }
 
     private void actionConfirmed() {
-        setVisibility(GONE);
-        if (mOnSlideActionListener != null) {
-            mOnSlideActionListener.onActionConfirmed();
+//        setVisibility(GONE);
+//        if (mOnSlideActionListener != null) {
+//            mOnSlideActionListener.onActionConfirmed();
+//        }
+        startLoading();
+    }
+
+    private void startLoading() {
+        logMsg("startLoading");
+        if (!mLoadingAnimator.isRunning()) {
+            mLoading = true;
+            setImageDrawable(mLoadingDrawable);
+            mLoadingAnimator.start();
         }
+    }
+
+    private void stopLoading() {
+        logMsg("stopLoading mLoadingAnimator.isRunning(): " + mLoadingAnimator.isRunning());
+        if (mLoadingAnimator.isRunning()) {
+            mLoadingAnimator.end();
+            setImageResource(android.R.color.transparent);
+            mLoading = false;
+        }
+        logMsg("stopLoading mLoadingAnimator.isRunning() after: " + mLoadingAnimator.isRunning());
     }
 
     public static void logMsg(String s) {
         Log.d(TAG, s);
     }
 
-    private void updateScrollX(float x) {
-        setScrollX((int) x);
+    private void updateX(float x) {
+        setSlideX(x);
+//        setX(x);
+    }
+
+    private void setSlideX(float x) {
+        final Drawable drawable = getDrawable();
+        logMsg("setSlideX: " + drawable);
+        mTranslateX = x;
+        Rect rect = drawable.getBounds();
+        rect.set((int) mTranslateX, rect.top, rect.right, rect.bottom);
+        drawable.setBounds(rect);
+
         invalidate();
     }
 
-    private void updateX(float x) {
-        setX(x);
-        invalidate();
+    @Override
+    protected void onDraw(Canvas canvas) {
+        if (mShimmerViewHelper != null) {
+            mShimmerViewHelper.onDraw();
+        }
+
+        if (mLoading) {
+            final Rect rect = mLoadingDrawable.getBounds();
+            logMsg("onDraw loading drawable rect: " + rect);
+            mLoadingDrawable.setBounds(30, 30, 162, 162);
+        }
+
+        super.onDraw(canvas);
+
+        logMsg("onDraw mLoading: " + mLoading);
+        if (!mLoading) {
+            mTextPaint.getTextBounds(mText, 0, mText.length(), mTextBounds);
+            canvas.drawText(mText, getWidth()/2 + mTranslateX, (getHeight()/2)+((mTextBounds.bottom- mTextBounds.top)/2) , mTextPaint);
+
+            final Paint originalPaint = getPaint();
+            final Rect textBounds = new Rect();
+            originalPaint.getTextBounds(getText().toString(), 0, getText().length(), textBounds);
+            logMsg("textBounds.centerX(): " + textBounds.centerX() + " textBounds.right: " + textBounds.right);
+
+            final String text = ">";
+            final Paint arrowPaint = new Paint(originalPaint);
+            arrowPaint.setTextScaleX(0.5f);
+            arrowPaint.setTextSize(getTextSize() * 1.4f);
+            arrowPaint.setTypeface(Typeface.SERIF);
+
+            final Rect arrowBounds = new Rect();
+            arrowPaint.getTextBounds(text, 0, text.length(), arrowBounds);
+            logMsg("arrowBounds.centerX(): " + arrowBounds.centerX() + " arrowBounds.width(): " + arrowBounds.width());
+            final int arrowWidth = arrowBounds.width();
+            final int gap = 12;
+            final int textCenterXOffset = arrowWidth + gap / 2;
+            setPadding(0, 0, textCenterXOffset, 0);// button本身的text的向左偏移
+
+            // Draw two arrow
+            final int x = getWidth() / 2 + textBounds.centerX() + gap - textCenterXOffset;// arrow向左偏移
+            final int y = getHeight() / 2 + 34;
+            canvas.drawText(text, x, y, arrowPaint);
+            arrowPaint.setAlpha(115);
+            canvas.drawText(text, x + arrowWidth, y, arrowPaint);
+        }
+    }
+
+    private CharSequence getText() {
+        return mText;
+    }
+
+    private float getTextSize() {
+        return mTextPaint.getTextSize();
+    }
+
+    public Paint getPaint() {
+        return mTextPaint;
+    }
+
+    public int getCurrentTextColor() {
+        return mTextPaint.getColor();
     }
 
     public void setOnSlideActionListener(OnSlideActionListener onSlideActionListener) {
         this.mOnSlideActionListener = onSlideActionListener;
+    }
+
+    public interface OnSlideActionListener {
+        public void onActionConfirmed();
     }
 
     @Override
@@ -222,21 +343,24 @@ public class SlideButton extends Button implements ShimmerViewBase {
         mShimmerViewHelper.setReflectionColor(reflectionColor);
     }
 
-    @Override
+    //    @Override
     public void setTextColor(int color) {
-        super.setTextColor(color);
+//        super.setTextColor(color);
+        mTextPaint.setColor(color);
         if (mShimmerViewHelper != null) {
             mShimmerViewHelper.setPrimaryColor(getCurrentTextColor());
         }
     }
 
-    @Override
-    public void setTextColor(ColorStateList colors) {
-        super.setTextColor(colors);
-        if (mShimmerViewHelper != null) {
-            mShimmerViewHelper.setPrimaryColor(getCurrentTextColor());
-        }
-    }
+//    @Override
+//    public void setTextColor(ColorStateList colors) {
+//        super.setTextColor(colors);
+//        mTextPaint.setColor(colors);
+//        mTextPaint.set
+//        if (mShimmerViewHelper != null) {
+//            mShimmerViewHelper.setPrimaryColor(getCurrentTextColor());
+//        }
+//    }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -244,43 +368,5 @@ public class SlideButton extends Button implements ShimmerViewBase {
         if (mShimmerViewHelper != null) {
             mShimmerViewHelper.onSizeChanged();
         }
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        if (mShimmerViewHelper != null) {
-            mShimmerViewHelper.onDraw();
-        }
-        super.onDraw(canvas);
-
-        final Paint originalPaint = getPaint();
-        final Rect textBounds = new Rect();
-        originalPaint.getTextBounds(getText().toString(), 0, getText().length(), textBounds);
-        logMsg("textBounds.centerX(): " + textBounds.centerX() + " textBounds.right: " + textBounds.right);
-
-        final String text = ">";
-        final Paint arrowPaint = new Paint(originalPaint);
-        arrowPaint.setTextScaleX(0.5f);
-        arrowPaint.setTextSize(getTextSize() * 1.4f);
-        arrowPaint.setTypeface(Typeface.SERIF);
-
-        final Rect arrowBounds = new Rect();
-        arrowPaint.getTextBounds(text, 0, text.length(), arrowBounds);
-        logMsg("arrowBounds.centerX(): " + arrowBounds.centerX() + " arrowBounds.width(): " + arrowBounds.width());
-        final int arrowWidth = arrowBounds.width();
-        final int gap = 12;
-        final int textCenterXOffset = arrowWidth + gap / 2;
-        setPadding(0, 0, textCenterXOffset, 0);// button本身的text的向左偏移
-
-        // Draw two arrow
-        final int x = getWidth() / 2 + textBounds.centerX() + gap - textCenterXOffset;// arrow向左偏移
-        final int y = getHeight() / 2 + 34;
-        canvas.drawText(text, x, y, arrowPaint);
-        arrowPaint.setAlpha(115);
-        canvas.drawText(text, x + arrowWidth, y, arrowPaint);
-    }
-
-    public interface OnSlideActionListener {
-        public void onActionConfirmed();
     }
 }

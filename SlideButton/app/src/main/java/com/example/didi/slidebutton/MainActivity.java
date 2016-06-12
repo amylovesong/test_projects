@@ -11,7 +11,7 @@ import com.romainpiel.shimmer.Shimmer;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, SlideButton.OnSlideActionListener {
     private SlideButton mSlideButton;
     private Shimmer shimmer;
-    private ProgressBar mLoadingView;
+//    private ProgressBar mLoadingView;
     private ObjectAnimator animator;
 
     @Override
@@ -23,8 +23,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mSlideButton = (SlideButton) findViewById(R.id.slide_button);
         mSlideButton.setOnSlideActionListener(this);
 
-        mLoadingView = (ProgressBar) findViewById(R.id.slide_button_progress);
-        mLoadingView.setAlpha(0);
+//        mLoadingView = (ProgressBar) findViewById(R.id.slide_button_progress);
+//        mLoadingView.setAlpha(0);
     }
 
     @Override
@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (animator != null) {
             animator.cancel();
         }
-        mLoadingView.setAlpha(0);
+//        mLoadingView.setAlpha(0);
 
         toggleAnimation();
     }
@@ -50,8 +50,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onActionConfirmed() {
-        animator = ObjectAnimator.ofFloat(mLoadingView, "Alpha", 0, 255);
-        animator.setDuration(2000);
-        animator.start();
+//        animator = ObjectAnimator.ofFloat(mLoadingView, "Alpha", 0, 255);
+//        animator.setDuration(2000);
+//        animator.start();
     }
 }
