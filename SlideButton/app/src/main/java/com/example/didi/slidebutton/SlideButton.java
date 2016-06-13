@@ -29,6 +29,9 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
     private static final String TAG = SlideButton.class.getSimpleName();
     private static final float ACTION_CONFIRM_DISTANCE_FRACTION = 0.3f;
 
+    private final int GAP_BETWEEN_TEXT_AND_ARROW = 24;
+    private final int ARROW_WIDTH = 20;
+
     /**
      * 由于滑动的时候会更新View的x坐标，因此使用MotionEvent的rawX来计算
      */
@@ -54,6 +57,10 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
     private boolean mLoading = false;
     private RotateDrawable mLoadingDrawable;
 
+    private String mTextArrow = ">";
+    private int mTextSize;
+    private int mTextCenterXOffset;
+
     public SlideButton(Context context) {
         super(context);
         init(null);
@@ -70,12 +77,14 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
     }
 
     private void init(AttributeSet attrs) {
+        mTextSize = 60;
+        mTextCenterXOffset = ARROW_WIDTH + GAP_BETWEEN_TEXT_AND_ARROW / 2;
+
         mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
         mTextPaint.density = getResources().getDisplayMetrics().density;
-
         mTextPaint.setColor(Color.WHITE);
         mTextPaint.setTextAlign(Paint.Align.CENTER);
-        mTextPaint.setTextSize(60);
+
         mTextBounds = new Rect();
 
         setImageResource(android.R.color.transparent);
@@ -171,6 +180,8 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
     public void reset() {
 //        setVisibility(VISIBLE);
         stopLoading();
+        setImageResource(android.R.color.transparent);
+        mLoading = false;
         updateX(0);
 //        setBackgroundResource(R.drawable.provider_bottom_bar_online_bg_selector);
     }
@@ -196,8 +207,6 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
         logMsg("stopLoading mLoadingAnimator.isRunning(): " + mLoadingAnimator.isRunning());
         if (mLoadingAnimator.isRunning()) {
             mLoadingAnimator.end();
-            setImageResource(android.R.color.transparent);
-            mLoading = false;
         }
         logMsg("stopLoading mLoadingAnimator.isRunning() after: " + mLoadingAnimator.isRunning());
     }
@@ -212,9 +221,9 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
     }
 
     private void setSlideX(float x) {
+        mTranslateX = x;
         final Drawable drawable = getDrawable();
         logMsg("setSlideX: " + drawable);
-        mTranslateX = x;
         Rect rect = drawable.getBounds();
         rect.set((int) mTranslateX, rect.top, rect.right, rect.bottom);
         drawable.setBounds(rect);
@@ -228,6 +237,7 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
             mShimmerViewHelper.onDraw();
         }
 
+        logMsg("onDraw mLoading: " + mLoading);
         if (mLoading) {
             final Rect rect = mLoadingDrawable.getBounds();
             logMsg("onDraw loading drawable rect: " + rect);
@@ -236,37 +246,39 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
 
         super.onDraw(canvas);
 
-        logMsg("onDraw mLoading: " + mLoading);
         if (!mLoading) {
-            mTextPaint.getTextBounds(mText, 0, mText.length(), mTextBounds);
-            canvas.drawText(mText, getWidth()/2 + mTranslateX, (getHeight()/2)+((mTextBounds.bottom- mTextBounds.top)/2) , mTextPaint);
-
-            final Paint originalPaint = getPaint();
-            final Rect textBounds = new Rect();
-            originalPaint.getTextBounds(getText().toString(), 0, getText().length(), textBounds);
-            logMsg("textBounds.centerX(): " + textBounds.centerX() + " textBounds.right: " + textBounds.right);
-
-            final String text = ">";
-            final Paint arrowPaint = new Paint(originalPaint);
-            arrowPaint.setTextScaleX(0.5f);
-            arrowPaint.setTextSize(getTextSize() * 1.4f);
-            arrowPaint.setTypeface(Typeface.SERIF);
-
-            final Rect arrowBounds = new Rect();
-            arrowPaint.getTextBounds(text, 0, text.length(), arrowBounds);
-            logMsg("arrowBounds.centerX(): " + arrowBounds.centerX() + " arrowBounds.width(): " + arrowBounds.width());
-            final int arrowWidth = arrowBounds.width();
-            final int gap = 12;
-            final int textCenterXOffset = arrowWidth + gap / 2;
-            setPadding(0, 0, textCenterXOffset, 0);// button本身的text的向左偏移
+            // Draw text
+            setPaintForText();
+            final Paint.FontMetricsInt textFontMetricsInt = mTextPaint.getFontMetricsInt();
+            logMsg("onDraw textFontMetricsInt" + textFontMetricsInt);
+            final int textX = (int) (getWidth() / 2 - mTextCenterXOffset + mTranslateX);
+            final int textBaseline = getHeight() / 2 - (textFontMetricsInt.bottom - textFontMetricsInt.top) / 2 - textFontMetricsInt.top;
+            canvas.drawText(mText, textX, textBaseline , mTextPaint);
 
             // Draw two arrow
-            final int x = getWidth() / 2 + textBounds.centerX() + gap - textCenterXOffset;// arrow向左偏移
-            final int y = getHeight() / 2 + 34;
-            canvas.drawText(text, x, y, arrowPaint);
-            arrowPaint.setAlpha(115);
-            canvas.drawText(text, x + arrowWidth, y, arrowPaint);
+            mTextPaint.getTextBounds(mText, 0, mText.length(), mTextBounds);
+            setPaintForArrow();
+            final Paint.FontMetricsInt arrowFontMetricsInt = mTextPaint.getFontMetricsInt();
+            logMsg("onDraw arrowFontMetricsInt: " + arrowFontMetricsInt);
+            final int arrowX = (int) (getWidth() / 2 + mTextBounds.centerX() + GAP_BETWEEN_TEXT_AND_ARROW - mTextCenterXOffset + mTranslateX);
+            final int arrowBaseline = getHeight() / 2 - (arrowFontMetricsInt.bottom - arrowFontMetricsInt.top) / 2 - arrowFontMetricsInt.top;
+            canvas.drawText(mTextArrow, arrowX, arrowBaseline, mTextPaint);
+            mTextPaint.setAlpha(115);
+            canvas.drawText(mTextArrow, arrowX + ARROW_WIDTH, arrowBaseline, mTextPaint);
         }
+    }
+
+    private void setPaintForArrow() {
+        mTextPaint.setTextScaleX(0.5f);
+        mTextPaint.setTextSize(getTextSize() * 1.4f);
+        mTextPaint.setTypeface(Typeface.SERIF);
+    }
+
+    private void setPaintForText() {
+        mTextPaint.setTextScaleX(1.0f);
+        mTextPaint.setTextSize(getTextSize());
+        mTextPaint.setTypeface(Typeface.DEFAULT);
+        mTextPaint.setAlpha(255);
     }
 
     private CharSequence getText() {
@@ -274,7 +286,7 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
     }
 
     private float getTextSize() {
-        return mTextPaint.getTextSize();
+        return mTextSize;
     }
 
     public Paint getPaint() {
