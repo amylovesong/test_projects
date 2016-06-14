@@ -61,6 +61,10 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
     private int mTextSize;
     private int mTextCenterXOffset;
 
+    private Drawable mImageDrawable;
+    private Drawable mBackgroundDrawable;
+    private int mTextColor;
+
     public SlideButton(Context context) {
         super(context);
         init(null);
@@ -82,13 +86,15 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
 
         mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
         mTextPaint.density = getResources().getDisplayMetrics().density;
-        mTextPaint.setColor(Color.WHITE);
+//        mTextPaint.setColor(Color.WHITE);
+        mTextPaint.setColor(getContext().getResources().getColor(R.color.provider_color_orange));
         mTextPaint.setTextAlign(Paint.Align.CENTER);
 
         mTextBounds = new Rect();
 
         setImageResource(android.R.color.transparent);
-        setBackgroundResource(R.color.provider_color_orange);
+//        setBackgroundResource(R.color.provider_color_bottom_bar_online_bg_normal);
+        setBackgroundResource(R.drawable.provider_bottom_bar_arrive_bg_normal);
         mLoadingDrawable = (RotateDrawable) getResources().getDrawable(R.drawable.provider_progress_button_loading);
         mLoadingAnimator = ObjectAnimator.ofInt(mLoadingDrawable, "Level", 0, 10000);
         mLoadingAnimator.setInterpolator(new LinearInterpolator());
@@ -127,6 +133,7 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
             case MotionEvent.ACTION_DOWN:
                 mRawXStart = event.getRawX();
                 logMsg("ACTION_DOWN mRawXStart: " + mRawXStart);
+                actionDown();
                 break;
             case MotionEvent.ACTION_UP:
                 mRawXEnd = event.getRawX();
@@ -140,6 +147,13 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
                     final long duration = (long) (Math.abs(targetX - curX) /getWidth() * 1000);
                     ObjectAnimator animator = ObjectAnimator.ofFloat(SlideButton.this, "SlideX", curX, targetX);
                     animator.setDuration(duration);
+                    animator.addListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            super.onAnimationEnd(animation);
+                            actionCancel();
+                        }
+                    });
                     animator.start();
                 } else {
                     logMsg("action confirmed");
@@ -169,7 +183,7 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
                 if (Math.abs(mMoveDeltaX) > mViewWidth * 0.02f) {
                     final float targetX = mMoveDeltaX > mViewInitialX ? mMoveDeltaX : 0;
 //                            mViewInitialX;
-                    setImageResource(R.color.provider_color_bottom_bar_online_bg_pressed);
+                    actionMove();
                     updateX(targetX);
                 }
                 break;
@@ -184,6 +198,28 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
         mLoading = false;
         updateX(0);
 //        setBackgroundResource(R.drawable.provider_bottom_bar_online_bg_selector);
+    }
+
+    private void actionDown() {
+        mTextColor = getCurrentTextColor();
+        mImageDrawable = getDrawable();
+        mBackgroundDrawable = getBackground();
+        logMsg("actionDown mTextColor: " + mTextColor);
+    }
+
+    private void actionMove() {
+        setTextColor(Color.WHITE);
+        setImageResource(R.color.provider_color_bottom_bar_online_bg_pressed);
+        setBackgroundResource(R.color.provider_color_bottom_bar_online_bg_normal);
+    }
+
+    private void actionCancel() {
+        logMsg("actionCancel");
+        // restore UI
+        logMsg("actionCancel mTextColor: " + mTextColor);
+        setTextColor(mTextColor);
+        setImageDrawable(mImageDrawable);
+        setBackgroundDrawable(mBackgroundDrawable);
     }
 
     private void actionConfirmed() {
@@ -241,7 +277,7 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
         if (mLoading) {
             final Rect rect = mLoadingDrawable.getBounds();
             logMsg("onDraw loading drawable rect: " + rect);
-            mLoadingDrawable.setBounds(30, 30, 162, 162);
+            mLoadingDrawable.setBounds(40, 40, 152, 152);
         }
 
         super.onDraw(canvas);
