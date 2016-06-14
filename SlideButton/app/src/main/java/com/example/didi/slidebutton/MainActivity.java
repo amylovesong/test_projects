@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.widget.ProgressBar;
 
 import com.romainpiel.shimmer.Shimmer;
 
@@ -74,21 +73,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onTouchActionMove(SlideButton button) {
-        stopShimmer();
+
     }
 
     @Override
     public void onActionCancel(SlideButton button) {
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                startShimmer();
-            }
-        }, 1000);
+
     }
 
     @Override
     public void onActionConfirmed(SlideButton button) {
-        stopShimmer();
+
     }
 }

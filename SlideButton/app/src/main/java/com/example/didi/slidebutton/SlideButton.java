@@ -311,6 +311,7 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
             canvas.drawText(mTextArrow, arrowX, arrowBaseline, mTextPaint);
             mTextPaint.setAlpha(115);
             canvas.drawText(mTextArrow, arrowX + ARROW_WIDTH, arrowBaseline, mTextPaint);
+            mTextPaint.setAlpha(255);// Reset alpha
         }
     }
 
