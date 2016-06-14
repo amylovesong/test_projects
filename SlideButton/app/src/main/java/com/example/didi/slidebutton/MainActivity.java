@@ -2,6 +2,7 @@ package com.example.didi.slidebutton;
 
 import android.animation.ObjectAnimator;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -13,6 +14,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Shimmer shimmer;
 //    private ProgressBar mLoadingView;
     private ObjectAnimator animator;
+    private Handler mHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +27,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 //        mLoadingView = (ProgressBar) findViewById(R.id.slide_button_progress);
 //        mLoadingView.setAlpha(0);
+        mHandler = new Handler();
     }
 
     @Override
@@ -39,19 +42,53 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void toggleAnimation() {
-        if (shimmer != null && shimmer.isAnimating()) {
-            shimmer.cancel();
+        if (isShimmerAnimating()) {
+            stopShimmer();
         } else {
-            shimmer = new Shimmer();
-            shimmer.setDuration(3000);
-            shimmer.start(mSlideButton);
+            startShimmer();
         }
     }
 
+    private void stopShimmer() {
+        if (isShimmerAnimating()) {
+            shimmer.cancel();
+        }
+    }
+
+    private boolean isShimmerAnimating() {
+        return shimmer != null && shimmer.isAnimating();
+    }
+
+    private void startShimmer() {
+        if (shimmer == null) {
+            shimmer = new Shimmer();
+            shimmer.setDuration(3000);
+        }
+        shimmer.start(mSlideButton);
+    }
+
     @Override
-    public void onActionConfirmed() {
-//        animator = ObjectAnimator.ofFloat(mLoadingView, "Alpha", 0, 255);
-//        animator.setDuration(2000);
-//        animator.start();
+    public void onTouchActionDown(SlideButton button) {
+
+    }
+
+    @Override
+    public void onTouchActionMove(SlideButton button) {
+        stopShimmer();
+    }
+
+    @Override
+    public void onActionCancel(SlideButton button) {
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                startShimmer();
+            }
+        }, 1000);
+    }
+
+    @Override
+    public void onActionConfirmed(SlideButton button) {
+        stopShimmer();
     }
 }

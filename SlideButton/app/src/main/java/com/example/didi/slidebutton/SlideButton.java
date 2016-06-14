@@ -86,15 +86,15 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
 
         mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
         mTextPaint.density = getResources().getDisplayMetrics().density;
-//        mTextPaint.setColor(Color.WHITE);
-        mTextPaint.setColor(getContext().getResources().getColor(R.color.provider_color_orange));
+        mTextPaint.setColor(Color.WHITE);
+//        mTextPaint.setColor(getContext().getResources().getColor(R.color.provider_color_orange));
         mTextPaint.setTextAlign(Paint.Align.CENTER);
 
         mTextBounds = new Rect();
 
         setImageResource(android.R.color.transparent);
-//        setBackgroundResource(R.color.provider_color_bottom_bar_online_bg_normal);
-        setBackgroundResource(R.drawable.provider_bottom_bar_arrive_bg_normal);
+        setBackgroundResource(R.color.provider_color_bottom_bar_online_bg_normal);
+//        setBackgroundResource(R.drawable.provider_bottom_bar_arrive_bg_normal);
         mLoadingDrawable = (RotateDrawable) getResources().getDrawable(R.drawable.provider_progress_button_loading);
         mLoadingAnimator = ObjectAnimator.ofInt(mLoadingDrawable, "Level", 0, 10000);
         mLoadingAnimator.setInterpolator(new LinearInterpolator());
@@ -205,12 +205,18 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
         mImageDrawable = getDrawable();
         mBackgroundDrawable = getBackground();
         logMsg("actionDown mTextColor: " + mTextColor);
+        if (mOnSlideActionListener != null) {
+            mOnSlideActionListener.onTouchActionDown(this);
+        }
     }
 
     private void actionMove() {
         setTextColor(Color.WHITE);
         setImageResource(R.color.provider_color_bottom_bar_online_bg_pressed);
         setBackgroundResource(R.color.provider_color_bottom_bar_online_bg_normal);
+        if (mOnSlideActionListener != null) {
+            mOnSlideActionListener.onTouchActionMove(this);
+        }
     }
 
     private void actionCancel() {
@@ -220,13 +226,17 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
         setTextColor(mTextColor);
         setImageDrawable(mImageDrawable);
         setBackgroundDrawable(mBackgroundDrawable);
+        logMsg("actionCancel isShimmering: " + mShimmerViewHelper.isShimmering());
+        if (mOnSlideActionListener != null) {
+            mOnSlideActionListener.onActionCancel(this);
+        }
     }
 
     private void actionConfirmed() {
 //        setVisibility(GONE);
-//        if (mOnSlideActionListener != null) {
-//            mOnSlideActionListener.onActionConfirmed();
-//        }
+        if (mOnSlideActionListener != null) {
+            mOnSlideActionListener.onActionConfirmed(this);
+        }
         startLoading();
     }
 
@@ -338,7 +348,13 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
     }
 
     public interface OnSlideActionListener {
-        public void onActionConfirmed();
+        public void onTouchActionDown(SlideButton button);
+
+        public void onTouchActionMove(SlideButton button);
+
+        public void onActionCancel(SlideButton button);
+
+        public void onActionConfirmed(SlideButton button);
     }
 
     @Override
