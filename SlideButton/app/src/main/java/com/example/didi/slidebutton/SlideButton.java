@@ -2,6 +2,7 @@ package com.example.didi.slidebutton;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -53,7 +54,7 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
     private TextPaint mTextPaint;
     private String mText = "右滑到达车站";
     private Rect mTextBounds;
-    private ObjectAnimator mLoadingAnimator;
+    private AnimatorSet mLoadingAnimatorSet;
     private boolean mLoading = false;
     private RotateDrawable mLoadingDrawable;
 
@@ -96,21 +97,30 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
         setBackgroundResource(R.color.provider_color_bottom_bar_online_bg_normal);
 //        setBackgroundResource(R.drawable.provider_bottom_bar_arrive_bg_normal);
         mLoadingDrawable = (RotateDrawable) getResources().getDrawable(R.drawable.provider_progress_button_loading);
-        mLoadingAnimator = ObjectAnimator.ofInt(mLoadingDrawable, "Level", 0, 10000);
-        mLoadingAnimator.setInterpolator(new LinearInterpolator());
-        mLoadingAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        mLoadingAnimator.setDuration(800);
-        mLoadingAnimator.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                super.onAnimationEnd(animation);
-                logMsg("mLoadingAnimator onAnimationEnd");
-                mLoadingDrawable.setLevel(0);
-            }
-        });
+        initLoadingDrawableAnimator();
 
         mShimmerViewHelper = new ShimmerViewHelper(this, getPaint(), attrs);
         mShimmerViewHelper.setPrimaryColor(getCurrentTextColor());
+    }
+
+    private void initLoadingDrawableAnimator() {
+        final ObjectAnimator loadingDrawableAlphaAnimator = ObjectAnimator.ofInt(mLoadingDrawable, "Alpha", 0, 255);
+        loadingDrawableAlphaAnimator.setDuration(300);
+        final ObjectAnimator loadingRotateAnimator = ObjectAnimator.ofInt(mLoadingDrawable, "Level", 0, 10000);
+        loadingRotateAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        loadingRotateAnimator.setDuration(800);
+
+        mLoadingAnimatorSet = new AnimatorSet();
+        mLoadingAnimatorSet.playTogether(loadingDrawableAlphaAnimator, loadingRotateAnimator);
+        mLoadingAnimatorSet.setInterpolator(new LinearInterpolator());
+        mLoadingAnimatorSet.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                logMsg("mLoadingAnimatorSet onAnimationEnd");
+                mLoadingDrawable.setLevel(0);
+            }
+        });
     }
 
     @Override
@@ -242,19 +252,19 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
 
     private void startLoading() {
         logMsg("startLoading");
-        if (!mLoadingAnimator.isRunning()) {
+        if (!mLoadingAnimatorSet.isRunning()) {
             mLoading = true;
             setImageDrawable(mLoadingDrawable);
-            mLoadingAnimator.start();
+            mLoadingAnimatorSet.start();
         }
     }
 
     private void stopLoading() {
-        logMsg("stopLoading mLoadingAnimator.isRunning(): " + mLoadingAnimator.isRunning());
-        if (mLoadingAnimator.isRunning()) {
-            mLoadingAnimator.end();
+        logMsg("stopLoading mLoadingAnimator.isRunning(): " + mLoadingAnimatorSet.isRunning());
+        if (mLoadingAnimatorSet.isRunning()) {
+            mLoadingAnimatorSet.end();
         }
-        logMsg("stopLoading mLoadingAnimator.isRunning() after: " + mLoadingAnimator.isRunning());
+        logMsg("stopLoading mLoadingAnimator.isRunning() after: " + mLoadingAnimatorSet.isRunning());
     }
 
     public static void logMsg(String s) {
