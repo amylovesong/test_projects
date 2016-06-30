@@ -1,4 +1,4 @@
-package com.sun.appformaven;
+package com.sun.local_repo;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

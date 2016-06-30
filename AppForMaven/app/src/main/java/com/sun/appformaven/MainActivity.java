@@ -3,7 +3,7 @@ package com.sun.appformaven;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
-import com.sun.util.Utils;
+import com.sun.local_repo.utils.CommonUtil;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -16,6 +16,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        Utils.showMessage(getApplicationContext(), "Utils from local repo");
+        CommonUtil.showMessage(getApplicationContext(), "Utils from local repo");
     }
 }
