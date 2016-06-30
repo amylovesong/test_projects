@@ -1,1 +1,1 @@
-include ':app', ':module_for_rename', 'localrepo'
+include ':app', 'localrepo'
