@@ -9,6 +9,7 @@ buildscript {
 
         //用于上传aar至bintray的插件
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.0'
+        //用于生成项目的JavaDoc和Source Jars的插件
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.3'
 
         // NOTE: Do not place your application dependencies here; they belong
