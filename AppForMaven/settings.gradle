@@ -1,1 +1,1 @@
-include ':app', ':local_repo'
+include ':app', ':local_repo', ':bintray_repo'
