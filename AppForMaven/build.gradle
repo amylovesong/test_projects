@@ -24,6 +24,10 @@ allprojects {
         maven {
             url 'file:///Users/sunxiaoling/maven_repo/'
         }
+
+        maven {
+            url 'https://dl.bintray.com/amylovesong/maven'
+        }
     }
 }
 
