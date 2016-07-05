@@ -1,1 +1,6 @@
 include ':app', ':local_repo', ':bintray_repo'
+
+println "In settings, gradle id is " + gradle.hashCode()
+println "Home dir: " + gradle.getGradleHomeDir()
+println "User home dir: " + gradle.getGradleUserHomeDir()
+println "Parent: " + gradle.parent

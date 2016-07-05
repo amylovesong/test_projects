@@ -34,3 +34,8 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+println "In AppForMaven, gradle id is " + gradle.hashCode()
+println "Home dir: " + gradle.getGradleHomeDir()
+println "User home dir: " + gradle.getGradleUserHomeDir()
+println "Parent: " + gradle.parent

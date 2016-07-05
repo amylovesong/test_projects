@@ -1,4 +1,8 @@
 apply plugin: 'com.android.application'
+//apply from: rootProject.getRootDir().getAbsolutePath() + "/utils.gradle"
+
+println "In app module, project is " + project
+println "In app module, rootProject is " + rootProject
 
 android {
     compileSdkVersion 23
@@ -24,6 +28,6 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.4.0'
 
-    compile 'com.sun.as-gradle-demo:local_repo:1.0.0'
+//    compile 'com.sun.as-gradle-demo:local_repo:1.0.0'
     compile 'com.sun.as-gradle-demo:bintray_repo:1.0.0'
 }
