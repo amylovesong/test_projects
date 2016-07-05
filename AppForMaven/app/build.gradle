@@ -1,8 +1,11 @@
 apply plugin: 'com.android.application'
-//apply from: rootProject.getRootDir().getAbsolutePath() + "/utils.gradle"
+apply from: rootProject.getRootDir().getAbsolutePath() + java.io.File.separator + "utils.gradle"
 
-println "In app module, project is " + project
-println "In app module, rootProject is " + rootProject
+println "In app module, project is: " + project
+println "In app module, rootProject is: " + rootProject
+
+println "In app module invoke closure in utils.gradle: "
+getPackageName()
 
 android {
     compileSdkVersion 23

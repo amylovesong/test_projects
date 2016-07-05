@@ -1,0 +1,14 @@
+def getPackageName() {
+    println "In utils.gradle, project is: " + project
+    def xmlFile = project.file("src/main/AndroidManifest.xml")
+    println "In utils.gradle, xmlFile: " + xmlFile
+    def rootManifest = new XmlSlurper().parse(xmlFile)
+//    def packageName = rootManifest['@package']
+    def packageName = rootManifest.@'package'
+    println "In utils.gradle, packageName: " + packageName
+    return packageName
+}
+
+ext {// Closure
+    getPackageName = this.&getPackageName
+}

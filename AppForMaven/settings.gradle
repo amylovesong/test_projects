@@ -1,3 +1,19 @@
+def initGradleEnvironment() {
+    println "Initialize gradle environment start..."
+
+    // Extra property example
+    Properties properties = new Properties()
+    File propertyFile = new File(rootDir.getAbsolutePath() + File.separator + "local.properties")
+    properties.load(propertyFile.newDataInputStream())
+    // 只在第一次定义或设置的时候需要ext前缀
+    gradle.ext.sdk_dir = properties.getProperty('sdk.dir')
+    println "gradle.sdk_dir: " + gradle.sdk_dir
+
+    println "Initialize gradle environment complete~"
+}
+
+initGradleEnvironment()
+
 include ':app', ':local_repo', ':bintray_repo'
 
 println "In settings, gradle id is " + gradle.hashCode()
