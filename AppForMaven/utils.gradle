@@ -9,6 +9,19 @@ def getPackageName() {
     return packageName
 }
 
+def disableDebugBuild() {
+    def targetTasks = project.tasks.findAll { task ->
+        task.name.contains("Debug")
+    }
+
+    targetTasks.each {
+        println "In utils.gradle, disable debug task: ${it.name}"
+        it.setEnabled false
+    }
+}
+
+// Extra properties for projects which apply this gradle file
 ext {// Closure
     getPackageName = this.&getPackageName
+    disableDebugBuild = this.&disableDebugBuild
 }
