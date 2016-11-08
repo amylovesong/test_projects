@@ -6,8 +6,10 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
@@ -24,47 +26,59 @@ import com.romainpiel.shimmer.ShimmerViewBase;
 import com.romainpiel.shimmer.ShimmerViewHelper;
 
 /**
- * Created by sxl on 16/5/15.
+ * 可手势滑动确认操作的滑块。
+ * 监听Touch事件处理手势，onDraw()中画上文字和指示箭头，使用drawable作为滑动确认后的Loading效果，使用线性渐变类型的shader处理闪烁效果
+ * @author sxl  (sunxiaoling@didichuxing.com)
+ * @date 16/5/15 16:29
+ * @version V1.0
  */
 public class SlideButton extends ImageButton implements ShimmerViewBase {
-    private static final String TAG = SlideButton.class.getSimpleName();
-    private static final float ACTION_CONFIRM_DISTANCE_FRACTION = 0.3f;
 
-    private final int GAP_BETWEEN_TEXT_AND_ARROW = 24;
-    private final int ARROW_WIDTH = 20;
+    public interface OnSlideActionListener {
+        void onTouchActionDown(SlideButton button);
+
+        void onTouchActionMove(SlideButton button);
+
+        void onActionCancel(SlideButton button);
+
+        void onActionConfirmed(SlideButton button);
+    }
+
+    private final float ACTION_CONFIRM_DISTANCE_FRACTION = 0.3f;
+    private final int GAP_BETWEEN_TEXT_AND_ARROW = getResources().getDimensionPixelSize(R.dimen.provider_6dp);
+    private final int ARROW_WIDTH = getResources().getDimensionPixelSize(R.dimen.provider_6dp);
+    private final String TEXT_ARROW = ">";
+
+    private enum STYLE{ORANGE, SLIDE}
+    private STYLE mStyle = STYLE.ORANGE;
 
     /**
-     * 由于滑动的时候会更新View的x坐标，因此使用MotionEvent的rawX来计算
+     * 滑动时MotionEvent的各项数值
      */
     private float mRawXStart;
     private float mRawXMove;
     private float mRawXEnd;
     private float mMoveDeltaX;
     /**
-     * View 初始状态的x坐标（滑动时需考虑padding，margin的情况）
+     * 初始状态的x坐标
      */
     private float mViewInitialX;
     private int mViewWidth;
 
     private OnSlideActionListener mOnSlideActionListener;
-
     private ShimmerViewHelper mShimmerViewHelper;
-    private float mTranslateX;
-
+    private Drawable mImageDrawable;
+    private Drawable mBackgroundDrawable;
+    private int mTextColor;
     private TextPaint mTextPaint;
-    private String mText = "右滑到达车站";
+    private String mText;
     private Rect mTextBounds;
     private AnimatorSet mLoadingAnimatorSet;
     private boolean mLoading = false;
     private RotateDrawable mLoadingDrawable;
-
-    private String mTextArrow = ">";
     private int mTextSize;
     private int mTextCenterXOffset;
-
-    private Drawable mImageDrawable;
-    private Drawable mBackgroundDrawable;
-    private int mTextColor;
+    private float mTranslateX;
 
     public SlideButton(Context context) {
         super(context);
@@ -82,25 +96,32 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
     }
 
     private void init(AttributeSet attrs) {
-        mTextSize = 60;
-        mTextCenterXOffset = ARROW_WIDTH + GAP_BETWEEN_TEXT_AND_ARROW / 2;
-
         mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
         mTextPaint.density = getResources().getDisplayMetrics().density;
-        mTextPaint.setColor(Color.WHITE);
-//        mTextPaint.setColor(getContext().getResources().getColor(R.color.provider_color_orange));
         mTextPaint.setTextAlign(Paint.Align.CENTER);
 
-        mTextBounds = new Rect();
+        final TypedArray a = getContext().obtainStyledAttributes(attrs, R.styleable.ProviderCustomButton);
+        mTextSize = (int) a.getDimension(R.styleable.ProviderCustomButton_fontSize, 34);
+        mText = a.getString(R.styleable.ProviderCustomButton_text);
+        setTextColor(a.getColor(R.styleable.ProviderCustomButton_fontColor, Color.WHITE));
+        a.recycle();
 
-        setImageResource(android.R.color.transparent);
-        setBackgroundResource(R.color.provider_color_bottom_bar_online_bg_normal);
-//        setBackgroundResource(R.drawable.provider_bottom_bar_arrive_bg_normal);
-        mLoadingDrawable = (RotateDrawable) getResources().getDrawable(R.drawable.provider_progress_button_loading);
+        mTextBounds = new Rect();
+        mTextCenterXOffset = ARROW_WIDTH + GAP_BETWEEN_TEXT_AND_ARROW / 2;
+
+//        setImageResource(android.R.color.transparent);
+//        setBackgroundResource(R.color.provider_color_orange);
+        setImageResource(R.drawable.sofa_bottom_bar_image_slide);
+//        setImageResource(R.color.sofa_color_bottom_bar_slide);
+        setBackgroundResource(android.R.color.black);
+
+        mLoadingDrawable = (RotateDrawable) getResources().getDrawable(R.drawable.sofa_online_loading);
         initLoadingDrawableAnimator();
 
         mShimmerViewHelper = new ShimmerViewHelper(this, getPaint(), attrs);
         mShimmerViewHelper.setPrimaryColor(getCurrentTextColor());
+
+        setScaleType(ScaleType.FIT_XY);
     }
 
     private void initLoadingDrawableAnimator() {
@@ -127,14 +148,52 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
         if (changed) {
-            mViewInitialX = getX();
+            mViewInitialX = 0;
             mViewWidth = getWidth();
             logMsg("onLayout mViewInitialX: " + mViewInitialX + " mViewWidth: " + mViewWidth);
         }
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
+    protected void onDraw(Canvas canvas) {
+        if (mShimmerViewHelper != null) {
+            mShimmerViewHelper.onDraw();
+        }
+        super.onDraw(canvas);
+
+        if (!mLoading) {
+            // Draw text
+            setPaintForText();
+            final Paint.FontMetricsInt textFontMetricsInt = mTextPaint.getFontMetricsInt();
+//            logMsg("onDraw textFontMetricsInt" + textFontMetricsInt);
+            final int textX = (int) (getWidth() / 2 - mTextCenterXOffset + mTranslateX);
+            final int textBaseline = getHeight() / 2 - (textFontMetricsInt.bottom - textFontMetricsInt.top) / 2 - textFontMetricsInt.top;
+            canvas.drawText(mText, textX, textBaseline , mTextPaint);
+
+            // Draw two arrow
+            mTextPaint.getTextBounds(mText, 0, mText.length(), mTextBounds);
+            setPaintForArrow();
+            final Paint.FontMetricsInt arrowFontMetricsInt = mTextPaint.getFontMetricsInt();
+//            logMsg("onDraw arrowFontMetricsInt: " + arrowFontMetricsInt);
+            final int arrowX = (int) (getWidth() / 2 + mTextBounds.centerX() + GAP_BETWEEN_TEXT_AND_ARROW - mTextCenterXOffset + mTranslateX);
+            final int arrowBaseline = getHeight() / 2 - (arrowFontMetricsInt.bottom - arrowFontMetricsInt.top) / 2 - arrowFontMetricsInt.top;
+            canvas.drawText(TEXT_ARROW, arrowX, arrowBaseline, mTextPaint);
+            mTextPaint.setAlpha(115);
+            canvas.drawText(TEXT_ARROW, arrowX + ARROW_WIDTH, arrowBaseline, mTextPaint);
+            mTextPaint.setAlpha(255);// Reset alpha
+        }
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (mShimmerViewHelper != null) {
+            mShimmerViewHelper.onSizeChanged();
+        }
+    }
+
+    @Override
+    public final boolean onTouchEvent(MotionEvent event) {
         logMsg("onTouchEvent event: " + event + " mLoading: " + mLoading);
         if (mLoading) {
             return true;
@@ -153,8 +212,8 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
                     logMsg("action not confirmed");
                     // 未确认操作，退回原位
                     final float curX = mTranslateX;
-                    final float targetX = 0;
-                    final long duration = (long) (Math.abs(targetX - curX) /getWidth() * 1000);
+                    final float targetX = mViewInitialX;
+                    final long duration = (long) (Math.abs(targetX - curX) / mViewWidth * 1000);
                     ObjectAnimator animator = ObjectAnimator.ofFloat(SlideButton.this, "SlideX", curX, targetX);
                     animator.setDuration(duration);
                     animator.addListener(new AnimatorListenerAdapter() {
@@ -168,11 +227,9 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
                 } else {
                     logMsg("action confirmed");
                     // 滑动手势抬起后，剩余部分自动滑出
-                    // 保持按下时的颜色
-//                    SlideButton.this.setBackgroundResource(R.color.provider_color_bottom_bar_online_bg_pressed);
                     final float curX = mTranslateX;
-                    final float targetX = 0 + getWidth();
-                    final long duration = (long) (Math.abs(targetX - curX) /getWidth() * 1000);
+                    final float targetX = mViewInitialX + mViewWidth;
+                    final long duration = (long) (Math.abs(targetX - curX) / mViewWidth * 1000);
                     ObjectAnimator animator = ObjectAnimator.ofFloat(SlideButton.this, "SlideX", curX, targetX);
                     animator.setDuration(duration);
                     animator.addListener(new AnimatorListenerAdapter() {
@@ -182,17 +239,23 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
                             actionConfirmed();
                         }
                     });
+                    animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                        @Override
+                        public void onAnimationUpdate(ValueAnimator animation) {
+                            invalidate();
+                            logMsg("onAnimationUpdate " + animation.getAnimatedValue());
+                        }
+                    });
                     animator.start();
                 }
                 break;
             case MotionEvent.ACTION_MOVE:
                 mRawXMove = event.getRawX();
-                // 用滑动的delta值来更新view的x坐标，即将更新的值不可超出view的初始位置
+                // 用滑动的delta值来更新x坐标，即将更新的值不可小于初始值（即只可滑动退回到初始位置，不可向左滑出）
                 mMoveDeltaX = mRawXMove - mRawXStart;
                 logMsg("ACTION_MOVE mRawXMove: " + mRawXMove + " mRawXStart: " + mRawXStart + " mMoveDeltaX: " + mMoveDeltaX);
                 if (Math.abs(mMoveDeltaX) > mViewWidth * 0.02f) {
-                    final float targetX = mMoveDeltaX > mViewInitialX ? mMoveDeltaX : 0;
-//                            mViewInitialX;
+                    final float targetX = mMoveDeltaX > mViewInitialX ? mMoveDeltaX : mViewInitialX;
                     actionMove();
                     updateX(targetX);
                 }
@@ -201,128 +264,61 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
         return super.onTouchEvent(event);
     }
 
-    public void reset() {
-//        setVisibility(VISIBLE);
-        stopLoading();
-        setImageResource(android.R.color.transparent);
-        mLoading = false;
-        updateX(0);
-//        setBackgroundResource(R.drawable.provider_bottom_bar_online_bg_selector);
-    }
-
     private void actionDown() {
+        if (mOnSlideActionListener != null) {
+            mOnSlideActionListener.onTouchActionDown(SlideButton.this);
+        }
         mTextColor = getCurrentTextColor();
         mImageDrawable = getDrawable();
         mBackgroundDrawable = getBackground();
-        logMsg("actionDown mTextColor: " + mTextColor);
-        if (mOnSlideActionListener != null) {
-            mOnSlideActionListener.onTouchActionDown(this);
-        }
     }
 
     private void actionMove() {
-        setTextColor(Color.WHITE);
-        setImageResource(R.color.provider_color_bottom_bar_online_bg_pressed);
-        setBackgroundResource(R.color.provider_color_bottom_bar_online_bg_normal);
         if (mOnSlideActionListener != null) {
-            mOnSlideActionListener.onTouchActionMove(this);
+            mOnSlideActionListener.onTouchActionMove(SlideButton.this);
         }
+        setStyleSlide();
     }
 
     private void actionCancel() {
         logMsg("actionCancel");
+        if (mOnSlideActionListener != null) {
+            mOnSlideActionListener.onActionCancel(SlideButton.this);
+        }
         // restore UI
-        logMsg("actionCancel mTextColor: " + mTextColor);
         setTextColor(mTextColor);
         setImageDrawable(mImageDrawable);
         setBackgroundDrawable(mBackgroundDrawable);
-        logMsg("actionCancel isShimmering: " + mShimmerViewHelper.isShimmering());
-        if (mOnSlideActionListener != null) {
-            mOnSlideActionListener.onActionCancel(this);
-        }
+        this.mStyle = STYLE.ORANGE;
     }
 
     private void actionConfirmed() {
-//        setVisibility(GONE);
         if (mOnSlideActionListener != null) {
-            mOnSlideActionListener.onActionConfirmed(this);
+            mOnSlideActionListener.onActionConfirmed(SlideButton.this);
         }
         startLoading();
     }
 
-    private void startLoading() {
-        logMsg("startLoading");
-        if (!mLoadingAnimatorSet.isRunning()) {
-            mLoading = true;
-            setImageDrawable(mLoadingDrawable);
-            mLoadingAnimatorSet.start();
-        }
-    }
-
-    private void stopLoading() {
-        logMsg("stopLoading mLoadingAnimator.isRunning(): " + mLoadingAnimatorSet.isRunning());
-        if (mLoadingAnimatorSet.isRunning()) {
-            mLoadingAnimatorSet.end();
-        }
-        logMsg("stopLoading mLoadingAnimator.isRunning() after: " + mLoadingAnimatorSet.isRunning());
-    }
-
-    public static void logMsg(String s) {
-        Log.d(TAG, s);
-    }
-
     private void updateX(float x) {
         setSlideX(x);
-//        setX(x);
     }
 
     private void setSlideX(float x) {
         mTranslateX = x;
         final Drawable drawable = getDrawable();
-        logMsg("setSlideX: " + drawable);
+        logMsg("setSlideX: " + drawable + " mTranslateX: " + mTranslateX);
         Rect rect = drawable.getBounds();
-        rect.set((int) mTranslateX, rect.top, rect.right, rect.bottom);
+        logMsg("setSlideX original bounds: " + rect);
+        Matrix matrix=getImageMatrix();
+        matrix.setTranslate(mTranslateX,0);
+        setImageMatrix(matrix);
+        logMsg("setSlideX after setImageMatrix bounds: " + drawable.getBounds());
+        final int translateX = (int) mTranslateX;
+        rect.set(translateX, rect.top, translateX+1440, rect.bottom);
         drawable.setBounds(rect);
+        logMsg("setSlideX final bounds: " + drawable.getBounds());
 
         invalidate();
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        if (mShimmerViewHelper != null) {
-            mShimmerViewHelper.onDraw();
-        }
-
-        logMsg("onDraw mLoading: " + mLoading);
-        if (mLoading) {
-            final Rect rect = mLoadingDrawable.getBounds();
-            logMsg("onDraw loading drawable rect: " + rect);
-            mLoadingDrawable.setBounds(40, 40, 152, 152);
-        }
-
-        super.onDraw(canvas);
-
-        if (!mLoading) {
-            // Draw text
-            setPaintForText();
-            final Paint.FontMetricsInt textFontMetricsInt = mTextPaint.getFontMetricsInt();
-            logMsg("onDraw textFontMetricsInt" + textFontMetricsInt);
-            final int textX = (int) (getWidth() / 2 - mTextCenterXOffset + mTranslateX);
-            final int textBaseline = getHeight() / 2 - (textFontMetricsInt.bottom - textFontMetricsInt.top) / 2 - textFontMetricsInt.top;
-            canvas.drawText(mText, textX, textBaseline , mTextPaint);
-
-            // Draw two arrow
-            mTextPaint.getTextBounds(mText, 0, mText.length(), mTextBounds);
-            setPaintForArrow();
-            final Paint.FontMetricsInt arrowFontMetricsInt = mTextPaint.getFontMetricsInt();
-            logMsg("onDraw arrowFontMetricsInt: " + arrowFontMetricsInt);
-            final int arrowX = (int) (getWidth() / 2 + mTextBounds.centerX() + GAP_BETWEEN_TEXT_AND_ARROW - mTextCenterXOffset + mTranslateX);
-            final int arrowBaseline = getHeight() / 2 - (arrowFontMetricsInt.bottom - arrowFontMetricsInt.top) / 2 - arrowFontMetricsInt.top;
-            canvas.drawText(mTextArrow, arrowX, arrowBaseline, mTextPaint);
-            mTextPaint.setAlpha(115);
-            canvas.drawText(mTextArrow, arrowX + ARROW_WIDTH, arrowBaseline, mTextPaint);
-            mTextPaint.setAlpha(255);// Reset alpha
-        }
     }
 
     private void setPaintForArrow() {
@@ -338,12 +334,38 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
         mTextPaint.setAlpha(255);
     }
 
-    private CharSequence getText() {
-        return mText;
-    }
-
     private float getTextSize() {
         return mTextSize;
+    }
+
+    private void logMsg(String s) {
+//        sLogger.debug(s);
+        Log.d(SlideButton.class.getSimpleName(), s);
+    }
+
+    public void startLoading() {
+        setScaleType(ScaleType.CENTER);
+        if (!mLoadingAnimatorSet.isRunning()) {
+            mLoading = true;
+            setImageDrawable(mLoadingDrawable);
+            mLoadingAnimatorSet.start();
+        }
+    }
+
+    private void stopLoading() {
+        setScaleType(ScaleType.FIT_XY);
+        if (mLoadingAnimatorSet.isRunning()) {
+            mLoadingAnimatorSet.end();
+            mLoading = false;
+        }
+    }
+
+    public void setText(int resId) {
+        setText(getContext().getText(resId));
+    }
+
+    public void setText(CharSequence text) {
+        this.mText = text.toString();
     }
 
     public Paint getPaint() {
@@ -358,14 +380,15 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
         this.mOnSlideActionListener = onSlideActionListener;
     }
 
-    public interface OnSlideActionListener {
-        public void onTouchActionDown(SlideButton button);
+    @Override
+    public final void setOnClickListener(OnClickListener l) {
+        // This button do not support click event
+    }
 
-        public void onTouchActionMove(SlideButton button);
-
-        public void onActionCancel(SlideButton button);
-
-        public void onActionConfirmed(SlideButton button);
+    @Override
+    public void setVisibility(int visibility) {
+        updateX(mViewInitialX);
+        super.setVisibility(visibility);
     }
 
     @Override
@@ -418,9 +441,7 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
         mShimmerViewHelper.setReflectionColor(reflectionColor);
     }
 
-    //    @Override
     public void setTextColor(int color) {
-//        super.setTextColor(color);
         mTextPaint.setColor(color);
         if (mShimmerViewHelper != null) {
             mShimmerViewHelper.setPrimaryColor(getCurrentTextColor());
@@ -430,18 +451,54 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
 //    @Override
 //    public void setTextColor(ColorStateList colors) {
 //        super.setTextColor(colors);
-//        mTextPaint.setColor(colors);
-//        mTextPaint.set
 //        if (mShimmerViewHelper != null) {
 //            mShimmerViewHelper.setPrimaryColor(getCurrentTextColor());
 //        }
 //    }
 
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        if (mShimmerViewHelper != null) {
-            mShimmerViewHelper.onSizeChanged();
+    private void setStyleSlide() {
+        logMsg("setStyleSlide mStyle: " + mStyle);
+        if (this.mStyle == STYLE.SLIDE) {
+            return;
         }
+        this.mStyle = STYLE.SLIDE;
+//        setTextColor(getContext().getResources().getColor(R.color.white));
+//        if (mStyle == STYLE.DEPART) {
+//            setImageResource(R.color.sofa_color_bottom_bar_depart_bg_pressed);
+//        } else {
+            setImageResource(R.drawable.sofa_bottom_bar_image_slide);
+//        setImageResource(R.color.sofa_color_bottom_bar_slide);
+//        }
+//        setBackgroundResource(R.drawable.sofa_bottom_bar_bg_slide);
+        setBackgroundResource(android.R.color.black);
     }
+
+    public void setStyleOrange() {
+        this.mStyle = STYLE.ORANGE;
+        this.stopLoading();
+        this.setTextColor(getContext().getResources().getColor(android.R.color.white));
+//        this.setImageResource(android.R.color.transparent);
+//        this.setBackgroundResource(R.drawable.sofa_bottom_bar_bg_normal);
+        setImageResource(R.drawable.sofa_bottom_bar_image_slide);
+//        setImageResource(R.color.sofa_color_bottom_bar_slide);
+        setBackgroundResource(android.R.color.black);
+        this.mShimmerViewHelper.setReflectionColor(getResources().getColor(R.color.sofa_color_bottom_bar_shimmer));
+    }
+
+    public void setStyleNormal() {
+        this.stopLoading();
+        this.setTextColor(getContext().getResources().getColor(R.color.provider_color_orange));
+        this.setImageResource(android.R.color.transparent);
+//        this.setBackgroundResource(R.drawable.sofa_bottom_bar_arrive_bg_normal);
+    }
+
+//    public void setStyleDepart() {
+//        this.mStyle = STYLE.DEPART;
+//        this.stopLoading();
+//        this.setTextColor(getContext().getResources().getColor(R.color.white));
+//        this.setImageResource(android.R.color.transparent);
+//        this.setBackgroundResource(R.color.sofa_color_bottom_bar_depart_bg_normal);
+//        // Shimmer的色值跟常态一致
+//        this.mShimmerViewHelper.setReflectionColor(getResources().getColor(R.color.sofa_color_bottom_bar_depart_bg_normal));
+//    }
 }

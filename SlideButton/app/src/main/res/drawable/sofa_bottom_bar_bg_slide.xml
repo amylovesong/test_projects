@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:drawable="@drawable/sofa_bottom_bar_shadow" />
+    <item
+        android:bottom="@dimen/provider_5dp" android:left="@dimen/provider_5dp"
+        android:right="@dimen/provider_5dp" android:top="@dimen/provider_5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/provider_2dp"/>
+            <solid android:color="@color/sofa_color_bottom_bar_slide"/>
+            <!--<solid android:color="@color/provider_black"/>-->
+        </shape>
+    </item>
+
+</layer-list>

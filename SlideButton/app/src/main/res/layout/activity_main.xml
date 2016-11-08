@@ -12,33 +12,23 @@
         android:layout_height="wrap_content"
         android:text="reset" />
 
-    <!--<RelativeLayout-->
+    <!--<ImageView-->
         <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="60dp"-->
-        <!--android:layout_alignParentBottom="true"-->
-        <!--android:background="@color/provider_color_orange"-->
-        <!--android:visibility="visible">-->
-
-        <!--<ProgressBar-->
-            <!--android:id="@+id/slide_button_progress"-->
-            <!--android:layout_width="24dp"-->
-            <!--android:layout_height="24dp"-->
-            <!--android:layout_centerInParent="true"-->
-            <!--android:indeterminateDuration="800"-->
-            <!--android:indeterminateDrawable="@drawable/provider_sign_in_submit_loading"/>-->
-
-    <!--</RelativeLayout>-->
+        <!--android:layout_height="180dp"-->
+        <!--android:layout_below="@id/reset_button"-->
+        <!--android:background="@drawable/sofa_slide_button_2"/>-->
 
     <com.example.didi.slidebutton.SlideButton
         android:id="@+id/slide_button"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:textColor="@android:color/white"
+        android:layout_height="70dp"
+        android:padding="5dp"
+        android:background="@drawable/sofa_bottom_bar_online_bg_selector"
+        app:text="右滑上线"
+        app:fontColor="@android:color/white"
+        app:fontSize="17sp"
+        android:visibility="visible"
         app:reflectionColor="#99FA8919"
-        android:text="@string/provider_bottom_bar_online"
-        android:textSize="16sp"
-        android:background="@drawable/provider_bottom_bar_online_bg_selector"
-        android:layout_alignParentBottom="true"
-        android:visibility="visible"/>
+        android:layout_alignParentBottom="true"/>
 
 </RelativeLayout>

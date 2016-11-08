@@ -3,4 +3,10 @@
     <declare-styleable name="ShimmerView">
         <attr name="reflectionColor" format="color"/>
     </declare-styleable>
+
+    <declare-styleable name="ProviderCustomButton">
+        <attr name="fontSize" format="dimension"/>
+        <attr name="fontColor" format="color"/>
+        <attr name="text" format="string"/>
+    </declare-styleable>
 </resources>

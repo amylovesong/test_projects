@@ -31,13 +31,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        mSlideButton.reset();
-        if (animator != null) {
-            animator.cancel();
-        }
+        mSlideButton.setStyleOrange();
+//        if (animator != null) {
+//            animator.cancel();
+//        }
 //        mLoadingView.setAlpha(0);
 
-        toggleAnimation();
+//        toggleAnimation();
     }
 
     public void toggleAnimation() {
