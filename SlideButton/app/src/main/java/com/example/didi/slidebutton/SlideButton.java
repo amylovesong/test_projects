@@ -290,6 +290,7 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
         setImageDrawable(mImageDrawable);
         setBackgroundDrawable(mBackgroundDrawable);
         this.mStyle = STYLE.ORANGE;
+//        setScaleType(ScaleType.FIT_XY);
     }
 
     private void actionConfirmed() {
@@ -304,18 +305,20 @@ public class SlideButton extends ImageButton implements ShimmerViewBase {
     }
 
     private void setSlideX(float x) {
+//        setScaleType(ScaleType.MATRIX);
         mTranslateX = x;
         final Drawable drawable = getDrawable();
         logMsg("setSlideX: " + drawable + " mTranslateX: " + mTranslateX);
         Rect rect = drawable.getBounds();
         logMsg("setSlideX original bounds: " + rect);
-        Matrix matrix=getImageMatrix();
-        matrix.setTranslate(mTranslateX,0);
-        setImageMatrix(matrix);
-        logMsg("setSlideX after setImageMatrix bounds: " + drawable.getBounds());
+//        Matrix matrix=getImageMatrix();
+//        matrix.setTranslate(mTranslateX,0);
+//        setImageMatrix(matrix);
+//        logMsg("setSlideX after setImageMatrix bounds: " + drawable.getBounds());
         final int translateX = (int) mTranslateX;
-        rect.set(translateX, rect.top, translateX+1440, rect.bottom);
-        drawable.setBounds(rect);
+//        rect.set(translateX, rect.top, translateX+1440, rect.bottom);
+//        drawable.setBounds(rect);
+        drawable.setBounds(translateX, rect.top, rect.width() + translateX, rect.bottom);
         logMsg("setSlideX final bounds: " + drawable.getBounds());
 
         invalidate();
