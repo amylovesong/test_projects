@@ -59,7 +59,7 @@
             android:layout_centerVertical="true"
             android:textSize="@dimen/provider_font_size_24"
             android:textColor="@color/provider_color_font_33"
-            android:text="5660"/>
+            tools:text="5660"/>
 
         <!-- 需要被替换成原有补票view -->
         <TextView

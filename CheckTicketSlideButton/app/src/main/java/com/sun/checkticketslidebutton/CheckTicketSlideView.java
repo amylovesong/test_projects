@@ -23,12 +23,16 @@ import java.util.Locale;
  * @date 2017/3/16 18:14
  */
 public class CheckTicketSlideView extends RelativeLayout {
+
+    public interface OnCheckStateChangedListener {
+        void onCheckStateChanged(final CheckTicketSlideView view, final boolean checked);
+    }
+
     private static final float SLIDE_DISTANCE_RATIO = 0.33f;
 
     private View mRootView;
     private View mForegroundView;
     private View mBackgroundView;
-
     private ImageView mForegroundIcon;
     private ImageView mBackgroundIcon;
     private TextView mPhoneNumberTextView;
@@ -37,7 +41,6 @@ public class CheckTicketSlideView extends RelativeLayout {
     private int mStartX;
     private int mCurX;
     private int mDeltaX;
-
     private boolean mInitialized = false;
     private int mForegroundViewInitialX;
     private int mForegroundViewWidth;
@@ -52,6 +55,8 @@ public class CheckTicketSlideView extends RelativeLayout {
 
     private Animator mForegroundViewAnimator;
     private Animation mBackgroundIconInAnimation;
+
+    private OnCheckStateChangedListener mListener;
 
     public CheckTicketSlideView(Context context) {
         this(context, null);
@@ -111,7 +116,7 @@ public class CheckTicketSlideView extends RelativeLayout {
                     updateForegroundViewByCheckedState(!mChecked);
                 }
                 mForegroundViewAnimator = ObjectAnimator.ofFloat(mForegroundView, "X", mForegroundView.getX(), mForegroundViewInitialX);
-                mForegroundViewAnimator.setDuration(2000);
+                mForegroundViewAnimator.setDuration(500);
                 mForegroundViewAnimator.addListener(new Animator.AnimatorListener() {
                     @Override
                     public void onAnimationStart(Animator animation) {
@@ -125,6 +130,9 @@ public class CheckTicketSlideView extends RelativeLayout {
                         // 根据滑动距离得到的确认状态更新前景view
                         if (mConfirmed) {
                             setChecked(!mChecked);
+                            if (mListener != null) {
+                                mListener.onCheckStateChanged(CheckTicketSlideView.this, mChecked);
+                            }
                             mConfirmed = false;
                         }
                     }
@@ -198,6 +206,10 @@ public class CheckTicketSlideView extends RelativeLayout {
         }
     }
 
+    private void logMessage(final String message) {
+        Log.d("CheckTicketSlideView", message);
+    }
+
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         super.onLayout(changed, l, t, r, b);
@@ -233,7 +245,7 @@ public class CheckTicketSlideView extends RelativeLayout {
         updateViewByCheckedState(checked);
     }
 
-    private void logMessage(final String message) {
-        Log.d("CheckTicketSlideView", message);
+    public void setOnCheckStateChangedListener(OnCheckStateChangedListener listener) {
+        this.mListener = listener;
     }
 }
