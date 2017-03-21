@@ -10,26 +10,35 @@
         android:layout_height="match_parent"
         android:background="@color/provider_color_orange"
         android:visibility="visible"
-        android:paddingLeft="@dimen/provider_26dp"
         android:paddingRight="@dimen/provider_16dp">
 
-        <ImageView
-            android:id="@+id/layout_background_icon"
-            android:layout_width="@dimen/provider_25dp"
-            android:layout_height="@dimen/provider_25dp"
-            android:layout_centerVertical="true"
-            android:src="@drawable/sofa_ticket_ic_checking"/>
-
-        <TextView
-            android:id="@+id/layout_background_text"
+        <!-- 做scale动效时为了有足够的区域展示，在这里加了padding -->
+        <RelativeLayout
+            android:id="@+id/layout_background_info"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/layout_background_icon"
-            android:layout_centerVertical="true"
-            android:layout_marginLeft="@dimen/provider_10dp"
-            android:textSize="@dimen/provider_font_size_14"
-            android:textColor="@android:color/white"
-            tools:text="已上车"/>
+            android:layout_height="match_parent"
+            android:paddingLeft="@dimen/provider_26dp"
+            android:paddingRight="@dimen/provider_20dp">
+
+            <ImageView
+                android:id="@+id/layout_background_icon"
+                android:layout_width="@dimen/provider_25dp"
+                android:layout_height="@dimen/provider_25dp"
+                android:layout_centerVertical="true"
+                android:src="@drawable/sofa_ticket_ic_checking"/>
+
+            <TextView
+                android:id="@+id/layout_background_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@id/layout_background_icon"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="@dimen/provider_10dp"
+                android:textSize="@dimen/provider_font_size_14"
+                android:textColor="@android:color/white"
+                tools:text="已上车"/>
+
+        </RelativeLayout>
 
     </RelativeLayout>
 

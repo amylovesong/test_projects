@@ -1,6 +1,5 @@
 package com.sun.checkticketslidebutton;
 
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -37,6 +36,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        checkTicketSlideView.startBackgroundIconAnimation();
+        checkTicketSlideView.startBackgroundInfoViewAnimation();
     }
 }
