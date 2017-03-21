@@ -1,6 +1,8 @@
 package com.sun.checkticketslidebutton;
 
 import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Color;
@@ -53,6 +55,10 @@ public class CheckTicketSlideView extends RelativeLayout {
      * 当前的验票状态
      */
     private boolean mChecked = false;
+    /**
+     * 前景view的动画正在执行；带delay时间的animator在start之后{@link Animator#isRunning()}在等待时间段内并不会return true，因此需要自定义flag
+     */
+    private boolean mForegroundViewAnimatorRunning;
 
     private Animator mForegroundViewAnimator;
     private Animation mBackgroundInfoInAnimation;
@@ -114,58 +120,105 @@ public class CheckTicketSlideView extends RelativeLayout {
                     if (!mConfirmed) {
                         mConfirmed = true;
 //                        updateForegroundViewStateOnSlide();
-                        updateForegroundViewByCheckedState(!mChecked);
                     }
                 }
                 break;
             case MotionEvent.ACTION_UP:
                 logMessage("onTouchEvent ACTION_UP mConfirmed: " + mConfirmed);
-//                if (mConfirmed) {
-//                    updateForegroundViewByCheckedState(!mChecked);
-//                }
-                mForegroundViewAnimator = ObjectAnimator.ofFloat(mForegroundView, "X", mForegroundView.getX(), mForegroundViewInitialX);
-                mForegroundViewAnimator.setDuration(500);
-                mForegroundViewAnimator.addListener(new Animator.AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator animation) {
-                        logMessage("ACTION_UP mForegroundViewAnimator onAnimationStart[" + animation + "]");
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        logMessage("ACTION_UP mForegroundViewAnimator onAnimationEnd[" + animation + "]"
-                                + " mForegroundView.getX(): " + mForegroundView.getX());
-                        // 根据滑动距离得到的确认状态更新前景view
-                        if (mConfirmed) {
-                            setChecked(!mChecked);
-                            if (mListener != null) {
-                                mListener.onCheckStateChanged(CheckTicketSlideView.this, mChecked);
-                            }
-                            mConfirmed = false;
-                        }
-                    }
-
-                    @Override
-                    public void onAnimationCancel(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animator animation) {
-
-                    }
-                });
-                mForegroundViewAnimator.start();
+                if (mConfirmed) {
+                    this.mForegroundViewAnimator = confirmAction();
+                } else {// cancel action
+                    this.mForegroundViewAnimator = cancelAction();
+                }
                 break;
         }
         return true;
     }
 
+    private Animator confirmAction() {
+        mForegroundViewAnimatorRunning = true;
+        final Animator translateAnimator = ObjectAnimator.ofFloat(mForegroundView, "X", mForegroundView.getX(), mForegroundViewWidth);
+        translateAnimator.setDuration(500);
+//        translateAnimator.addListener(new AnimatorListenerAdapter() {
+//            @Override
+//            public void onAnimationStart(Animator animation) {
+//                super.onAnimationStart(animation);
+//                logMessage("[confirmAction] translateAnimator onAnimationStart[" + animation + "]");
+//            }
+//
+//            @Override
+//            public void onAnimationEnd(Animator animation) {
+//                super.onAnimationEnd(animation);
+//                logMessage("[confirmAction] translateAnimator onAnimationEnd[" + animation + "]"
+//                        + " mForegroundView.getX(): " + mForegroundView.getX());
+//            }
+//        });
+
+        final Animator alphaAnimator = ObjectAnimator.ofFloat(mForegroundView, "Alpha", 0f, 1f);
+        alphaAnimator.setStartDelay(1000);
+        alphaAnimator.setDuration(200);
+        alphaAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                super.onAnimationStart(animation);
+                logMessage("[confirmAction] alphaAnimator onAnimationStart[" + animation + "]");
+                updateForegroundViewByCheckedState(!mChecked);
+                mForegroundView.setX(mForegroundViewInitialX);
+                mForegroundView.setAlpha(0f);
+            }
+        });
+
+        final AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.playSequentially(translateAnimator, alphaAnimator);
+        animatorSet.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                logMessage("[confirmAction] animatorSet onAnimationEnd[" + animation + "]"
+                        + " mForegroundView.getX(): " + mForegroundView.getX());
+                setChecked(!mChecked);
+                if (mListener != null) {
+                    mListener.onCheckStateChanged(CheckTicketSlideView.this, mChecked);
+                }
+                mConfirmed = false;
+                mForegroundViewAnimatorRunning = false;
+            }
+        });
+        animatorSet.start();
+
+        return animatorSet;
+    }
+
+    private Animator cancelAction() {
+        final Animator translateAnimator = ObjectAnimator.ofFloat(mForegroundView, "X", mForegroundView.getX(), mForegroundViewInitialX);
+        translateAnimator.setDuration(500);
+        translateAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                super.onAnimationStart(animation);
+                logMessage("[cancelAction] translateAnimator onAnimationStart[" + animation + "]");
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                logMessage("[cancelAction] translateAnimator onAnimationEnd[" + animation + "]"
+                        + " mForegroundView.getX(): " + mForegroundView.getX());
+            }
+        });
+        translateAnimator.start();
+
+        return translateAnimator;
+    }
+
     private void endForegroundViewAnimationIfNecessary(final String source) {
-        boolean isForegroundViewAnimatorRunning = mForegroundViewAnimator != null && mForegroundViewAnimator.isRunning();
-        logMessage("["+ source + "]endForegroundViewAnimationIfNecessary mForegroundViewAnimator.isRunning(): " + isForegroundViewAnimatorRunning);
-        if (isForegroundViewAnimatorRunning) {
-            mForegroundViewAnimator.end();
+        final boolean animatorRunning = mForegroundViewAnimator != null && mForegroundViewAnimator.isRunning();
+        logMessage("["+ source + "]endForegroundViewAnimationIfNecessary animatorRunning: " + animatorRunning
+                + " mForegroundViewAnimatorRunning: " + mForegroundViewAnimatorRunning);
+        if ((animatorRunning || mForegroundViewAnimatorRunning)) {
+            if (mForegroundViewAnimator != null) {
+                mForegroundViewAnimator.end();
+            }
         }
     }
 
