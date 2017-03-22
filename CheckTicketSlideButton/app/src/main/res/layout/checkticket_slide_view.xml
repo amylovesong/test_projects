@@ -34,7 +34,7 @@
                 android:layout_toRightOf="@id/layout_background_icon"
                 android:layout_centerVertical="true"
                 android:layout_marginLeft="@dimen/provider_10dp"
-                android:textSize="@dimen/provider_font_size_14"
+                android:textSize="@dimen/provider_font_size_18"
                 android:textColor="@android:color/white"
                 tools:text="已上车"/>
 
