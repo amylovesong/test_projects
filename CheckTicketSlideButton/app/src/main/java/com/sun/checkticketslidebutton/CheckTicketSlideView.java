@@ -99,7 +99,7 @@ public class CheckTicketSlideView extends RelativeLayout {
                 mStartX = (int) event.getX();
                 mDeltaX = 0;
                 startBackgroundInfoViewAnimation();
-//                break;
+                break;
             case MotionEvent.ACTION_MOVE:
                 mCurX = (int) event.getX();
 //                // 不可向左滑动
@@ -110,8 +110,10 @@ public class CheckTicketSlideView extends RelativeLayout {
                 logMessage(String.format(Locale.getDefault(), "onTouchEvent ACTION_MOVE mStartX: %d mCurX: %d mDeltaX: %d", mStartX, mCurX, mDeltaX));
                 if (mDeltaX > 0) {
                     mForegroundView.setX(mDeltaX);
-                    logMessage(String.format(Locale.getDefault(), "onTouchEvent ACTION_MOVE after mForegroundView.getX(): %f", mForegroundView.getX()));
+                } else {
+                    mForegroundView.setX(mForegroundViewInitialX);
                 }
+                logMessage(String.format(Locale.getDefault(), "onTouchEvent ACTION_MOVE after mForegroundView.getX(): %f", mForegroundView.getX()));
                 // 滑动过程中，根据滑动距离是否达到阈值更改前景view的状态
 //                if (mForegroundView.getX() >= SLIDE_DISTANCE_RATIO * mForegroundViewWidth) {
                 if (mForegroundView.getX() >= mActionConfirmThreshold) {
