@@ -36,6 +36,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        checkTicketSlideView.startBackgroundInfoViewAnimation();
+//        checkTicketSlideView.startForegroundViewClickAnimation();
     }
 }
