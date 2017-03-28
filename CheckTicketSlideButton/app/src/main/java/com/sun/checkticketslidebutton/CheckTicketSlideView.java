@@ -98,7 +98,7 @@ public class CheckTicketSlideView extends RelativeLayout {
                 endAllAnimations("onTouchEvent ACTION_DOWN");
                 mTouchEventStartX = (int) event.getX();
                 mTouchEventDeltaX = 0;
-                startBackgroundInfoViewAnimation();
+//                startBackgroundInfoViewAnimation();
                 break;
             case MotionEvent.ACTION_MOVE:
                 mTouchEventCurX = (int) event.getX();
@@ -107,6 +107,8 @@ public class CheckTicketSlideView extends RelativeLayout {
                         mTouchEventStartX, mTouchEventCurX, mTouchEventDeltaX, mActionClickThreshold));
                 // 是否超过点击阈值
                 if (mTouchEventDeltaX > mActionClickThreshold) {
+                    scaleBackgroundInfoViewOnSlide();
+
                     mForegroundLayout.setX(mTouchEventDeltaX);
 //                    logMessage(String.format(Locale.getDefault(), "onTouchEvent ACTION_MOVE after mForegroundLayout.getX(): %f", mForegroundLayout.getX()));
                     // 滑动过程中，根据滑动距离是否达到确认操作阈值更改前景view的状态
@@ -160,6 +162,15 @@ public class CheckTicketSlideView extends RelativeLayout {
                 break;
         }
         return true;
+    }
+
+    private void scaleBackgroundInfoViewOnSlide() {
+        final float ratio = mTouchEventDeltaX * 1f / mActionConfirmThreshold;
+        final float alpha = Math.min(Math.max(ratio, 0.5f), 1f);
+        mBackgroundInfoLayout.setAlpha(alpha);
+        final float scale = Math.min(Math.max(ratio, 0.5f), 1f);
+        mBackgroundInfoLayout.setScaleX(scale);
+        mBackgroundInfoLayout.setScaleY(scale);
     }
 
     private void endAllAnimations(final String source) {

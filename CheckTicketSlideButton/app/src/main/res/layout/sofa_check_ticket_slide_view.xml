@@ -9,7 +9,7 @@
         android:id="@+id/sofa_check_ticket_layout_background_info"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:paddingLeft="@dimen/provider_26dp"
+        android:paddingLeft="@dimen/provider_16dp"
         android:paddingRight="@dimen/provider_20dp">
 
         <ImageView
