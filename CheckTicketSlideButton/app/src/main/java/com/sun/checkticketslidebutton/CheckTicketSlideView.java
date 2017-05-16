@@ -2,7 +2,9 @@ package com.sun.checkticketslidebutton;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.content.Context;
 import android.graphics.Color;
 import android.util.AttributeSet;
@@ -10,11 +12,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.view.animation.AnticipateOvershootInterpolator;
 import android.view.animation.BounceInterpolator;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -37,6 +37,7 @@ public class CheckTicketSlideView extends RelativeLayout {
     private ImageView mBackgroundIconImageView;
     private TextView mPhoneNumberTextView;
     private TextView mBackgroundTipsTextView;
+    private View mForegroundInfoLayout;
     private View mBackgroundInfoLayout;
 
     private int mTouchEventStartX;
@@ -44,6 +45,7 @@ public class CheckTicketSlideView extends RelativeLayout {
     private int mTouchEventDeltaX;
     private boolean mInitialized;
     private float mForegroundViewInitialX;
+    private float mForegroundViewWidth;
     private int mActionConfirmThreshold;
     private int mActionClickThreshold;
     /**
@@ -57,7 +59,6 @@ public class CheckTicketSlideView extends RelativeLayout {
 
     private Animator mForegroundViewTranslateAnimator;
     private Animator mForegroundViewClickAnimator;
-    private Animation mBackgroundInfoInAnimation;
 
     private OnCheckStateChangedListener mListener;
 
@@ -69,8 +70,6 @@ public class CheckTicketSlideView extends RelativeLayout {
         super(context, attrs);
 
         initView();
-        mBackgroundInfoInAnimation = AnimationUtils.loadAnimation(context, R.anim.sofa_check_ticket_background_info_in);
-        mBackgroundInfoInAnimation.setInterpolator(new AnticipateOvershootInterpolator());
         mActionClickThreshold = getResources().getDimensionPixelSize(R.dimen.provider_3dp);
 
         setChecked(false);
@@ -85,6 +84,7 @@ public class CheckTicketSlideView extends RelativeLayout {
         this.mPhoneNumberTextView = (TextView) findViewById(R.id.sofa_check_ticket_tv_phone_number);
         this.mBackgroundTipsTextView = (TextView) findViewById(R.id.sofa_check_ticket_tv_background_tips);
 
+        this.mForegroundInfoLayout = findViewById(R.id.sofa_check_ticket_layout_foreground_info);
         this.mBackgroundInfoLayout = findViewById(R.id.sofa_check_ticket_layout_background_info);
     }
 
@@ -98,7 +98,6 @@ public class CheckTicketSlideView extends RelativeLayout {
                 endAllAnimations("onTouchEvent ACTION_DOWN");
                 mTouchEventStartX = (int) event.getX();
                 mTouchEventDeltaX = 0;
-//                startBackgroundInfoViewAnimation();
                 break;
             case MotionEvent.ACTION_MOVE:
                 mTouchEventCurX = (int) event.getX();
@@ -107,20 +106,12 @@ public class CheckTicketSlideView extends RelativeLayout {
                         mTouchEventStartX, mTouchEventCurX, mTouchEventDeltaX, mActionClickThreshold));
                 // 是否超过点击阈值
                 if (mTouchEventDeltaX > mActionClickThreshold) {
-                    scaleBackgroundInfoViewOnSlide();
-
                     mForegroundLayout.setX(mTouchEventDeltaX);
-//                    logMessage(String.format(Locale.getDefault(), "onTouchEvent ACTION_MOVE after mForegroundLayout.getX(): %f", mForegroundLayout.getX()));
-                    // 滑动过程中，根据滑动距离是否达到确认操作阈值更改前景view的状态
-                    if (mForegroundLayout.getX() >= mActionConfirmThreshold) {
-                        // 变为目标状态
-                        updateForegroundViewByCheckedState(!mChecked);
-                        mForegroundIconImageView.setVisibility(INVISIBLE);
-                    } else {// 回到当前状态
-                        updateForegroundViewByCheckedState(mChecked);
-                    }
+                    scaleBackgroundInfoViewOnSlide();
+                    fadeForegroundInfoViewOnSlide();
                 } else {
                     mForegroundLayout.setX(mForegroundViewInitialX);
+                    mForegroundLayout.setAlpha(1f);
                 }
                 break;
             case MotionEvent.ACTION_UP:
@@ -135,33 +126,94 @@ public class CheckTicketSlideView extends RelativeLayout {
                     break;
                 }
                 // 超过操作确认阈值，判定为确认本次操作
-                if (mForegroundLayout.getX() >= mActionConfirmThreshold) {
-                    mConfirmed = true;
-                }
+                mConfirmed = mForegroundLayout.getX() >= mActionConfirmThreshold;
                 logMessage("onTouchEvent ACTION_UP mConfirmed: " + mConfirmed);
-                mForegroundViewTranslateAnimator = startForegroundViewTranslateAnimation(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationStart(Animator animation) {
-                        logMessage("ACTION_UP mForegroundViewTranslateAnimator onAnimationStart[" + animation + "]");
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        logMessage("ACTION_UP mForegroundViewTranslateAnimator onAnimationEnd[" + animation + "]"
-                                + " mForegroundLayout.getX(): " + mForegroundLayout.getX());
-                        // 确认本次操作，更改check状态
-                        if (mConfirmed) {
-                            setChecked(!mChecked);
-                            if (mListener != null) {
-                                mListener.onCheckStateChanged(CheckTicketSlideView.this, mChecked);
-                            }
-                            mConfirmed = false;
+                // 确认操作和取消操作的 translate 动画不同
+                if (!mConfirmed) {
+                    mForegroundViewTranslateAnimator = cancelAction(null);
+                } else {
+                    mForegroundViewTranslateAnimator = confirmAction(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+                            logMessage("ACTION_UP mForegroundViewTranslateAnimator onAnimationStart[" + animation + "]");
                         }
-                    }
-                });
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            animation.removeListener(this);
+                            logMessage("ACTION_UP mForegroundViewTranslateAnimator onAnimationEnd[" + animation + "]"
+                                    + " mForegroundLayout.getX(): " + mForegroundLayout.getX());
+                            // 确认本次操作，更改check状态
+                            if (mConfirmed) {
+                                setChecked(!mChecked);
+                                if (mListener != null) {
+                                    mListener.onCheckStateChanged(CheckTicketSlideView.this, mChecked);
+                                }
+                                mConfirmed = false;
+                            }
+                        }
+                    });
+                }
                 break;
         }
         return true;
+    }
+
+    private Animator confirmAction(final Animator.AnimatorListener listener) {
+        // Translate & alpha out foreground view first
+        final PropertyValuesHolder translateX = PropertyValuesHolder.ofFloat("X", mForegroundViewWidth);
+        final PropertyValuesHolder alphaOut = PropertyValuesHolder.ofFloat("Alpha", 0f);
+        final Animator translateFadeOutAnimator = ObjectAnimator.ofPropertyValuesHolder(mForegroundLayout, translateX, alphaOut);
+        translateFadeOutAnimator.setDuration(300).setInterpolator(new DecelerateInterpolator());
+        // Fade & scale in foreground info view next
+        final float[] values = {0.2f, 1f};
+        final PropertyValuesHolder scaleX = PropertyValuesHolder.ofFloat("ScaleX", values);
+        final PropertyValuesHolder scaleY = PropertyValuesHolder.ofFloat("ScaleY", values);
+        final PropertyValuesHolder alpha1 = PropertyValuesHolder.ofFloat("Alpha", values);
+        final Animator fadeScaleInAnimator = ObjectAnimator.ofPropertyValuesHolder(mForegroundInfoLayout, scaleX, scaleY, alpha1);
+        fadeScaleInAnimator.setDuration(300).setInterpolator(new OvershootInterpolator());
+        fadeScaleInAnimator.setStartDelay(100);
+        fadeScaleInAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                super.onAnimationEnd(animation);
+                animation.removeListener(this);
+                // 先将 UI 变为目标状态；在整个动画结束后再更新状态值并发出通知
+                updateForegroundViewByCheckedState(!mChecked);
+                mForegroundLayout.setX(mForegroundViewInitialX);
+                mForegroundLayout.setAlpha(1f);
+            }
+        });
+
+        final AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.playSequentially(translateFadeOutAnimator, fadeScaleInAnimator);
+        if (listener != null) {
+            animatorSet.addListener(listener);
+        }
+        animatorSet.start();
+
+        return animatorSet;
+    }
+
+    private Animator cancelAction(final Animator.AnimatorListener listener) {
+        final PropertyValuesHolder translate = PropertyValuesHolder.ofFloat("X", mForegroundViewInitialX);
+        final PropertyValuesHolder alpha = PropertyValuesHolder.ofFloat("Alpha", 1f);
+
+        final Animator animator = ObjectAnimator.ofPropertyValuesHolder(mForegroundLayout, translate, alpha);
+        animator.setDuration(200).setInterpolator(new DecelerateInterpolator());
+
+        if (listener != null) {
+            animator.addListener(listener);
+        }
+        animator.start();
+
+        return animator;
+    }
+
+    private void fadeForegroundInfoViewOnSlide() {
+        final float ratio = mTouchEventDeltaX * 1f / mActionConfirmThreshold;
+        final float alpha = Math.max(-0.8f * ratio + 1f, 0.2f);
+        mForegroundLayout.setAlpha(alpha);
     }
 
     private void scaleBackgroundInfoViewOnSlide() {
@@ -176,19 +228,6 @@ public class CheckTicketSlideView extends RelativeLayout {
     private void endAllAnimations(final String source) {
         endForegroundViewTranslateAnimation(source);
         endForegroundViewClickAnimation(source);
-        endBackgroundInfoViewAnimation(source);
-    }
-
-    private Animator startForegroundViewTranslateAnimation(Animator.AnimatorListener listener) {
-        final Animator translateAnimator = ObjectAnimator.ofFloat(mForegroundLayout, "X", mForegroundLayout.getX(), mForegroundViewInitialX);
-        translateAnimator.setDuration(500);
-        translateAnimator.setInterpolator(new AccelerateInterpolator());
-        if (listener != null) {
-            translateAnimator.addListener(listener);
-        }
-        translateAnimator.start();
-
-        return translateAnimator;
     }
 
     private void endForegroundViewTranslateAnimation(final String source) {
@@ -216,15 +255,6 @@ public class CheckTicketSlideView extends RelativeLayout {
         }
     }
 
-    private void startBackgroundInfoViewAnimation() {
-        mBackgroundInfoLayout.startAnimation(mBackgroundInfoInAnimation);
-    }
-
-    private void endBackgroundInfoViewAnimation(final String source) {
-        logMessage("["+ source + "]endBackgroundInfoViewAnimation");
-        mBackgroundInfoInAnimation.cancel();
-    }
-
     private void updateViewByCheckedState(final boolean checked) {
         updateForegroundViewByCheckedState(checked);
         updateBackgroundViewByCheckedState(checked);
@@ -237,11 +267,9 @@ public class CheckTicketSlideView extends RelativeLayout {
         if (checked) {
             mForegroundIconImageView.setImageResource(R.drawable.sofa_ticket_ic_checked);
             mPhoneNumberTextView.setTextColor(getResources().getColor(R.color.provider_color_orange));
-            // TODO: 2017/3/17 补票View
         } else {
             mForegroundIconImageView.setImageResource(R.drawable.sofa_ticket_ic_unchekced);
             mPhoneNumberTextView.setTextColor(getResources().getColor(R.color.provider_color_font_33));
-            // TODO: 2017/3/17 补票View
         }
     }
 
@@ -267,9 +295,11 @@ public class CheckTicketSlideView extends RelativeLayout {
         super.onLayout(changed, l, t, r, b);
         logMessage("onLayout mInitialized: " + mInitialized
                 + " mForegroundViewInitialX: " + mForegroundViewInitialX + " mForegroundLayout.getX(): " + mForegroundLayout.getX()
+                + "\nmForegroundViewWidth: " + mForegroundViewWidth + " mForegroundLayout.getWidth(): " + mForegroundLayout.getWidth()
                 + " mActionConfirmThreshold: " + mActionConfirmThreshold + " mBackgroundTipsTextView.getRight(): " + mBackgroundTipsTextView.getRight());
         if (!this.mInitialized) {
             this.mForegroundViewInitialX = mForegroundLayout.getX();
+            this.mForegroundViewWidth = mForegroundLayout.getWidth();
             this.mActionConfirmThreshold = mBackgroundTipsTextView.getRight();
             this.mInitialized = true;
         }

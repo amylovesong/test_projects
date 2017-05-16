@@ -25,7 +25,7 @@
             android:layout_height="wrap_content"
             android:layout_toRightOf="@id/sofa_check_ticket_img_background_icon"
             android:layout_centerVertical="true"
-            android:layout_marginLeft="@dimen/provider_10dp"
+            android:layout_marginLeft="@dimen/provider_16dp"
             android:textSize="@dimen/provider_font_size_18"
             android:textColor="@android:color/white"
             tools:text="已上车"/>
@@ -37,28 +37,35 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="visible"
-        android:paddingLeft="@dimen/provider_16dp"
         android:paddingRight="@dimen/provider_16dp"
         android:background="@android:color/white">
 
-        <ImageView
-            android:id="@+id/sofa_check_ticket_img_foreground_icon"
-            android:layout_width="@dimen/provider_25dp"
-            android:layout_height="@dimen/provider_25dp"
-            android:layout_centerVertical="true"
-            android:src="@drawable/sofa_ticket_ic_unchekced"
-            android:scaleType="center"/>
-
-        <TextView
-            android:id="@+id/sofa_check_ticket_tv_phone_number"
+        <RelativeLayout
+            android:id="@+id/sofa_check_ticket_layout_foreground_info"
+            android:paddingLeft="@dimen/provider_16dp"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/sofa_check_ticket_img_foreground_icon"
-            android:layout_marginLeft="@dimen/provider_16dp"
-            android:layout_centerVertical="true"
-            android:textSize="@dimen/provider_font_size_24"
-            android:textColor="@color/provider_color_font_33"
-            tools:text="5660"/>
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/sofa_check_ticket_img_foreground_icon"
+                android:layout_width="@dimen/provider_25dp"
+                android:layout_height="@dimen/provider_25dp"
+                android:layout_centerVertical="true"
+                android:src="@drawable/sofa_ticket_ic_unchekced"
+                android:scaleType="center"/>
+
+            <TextView
+                android:id="@+id/sofa_check_ticket_tv_phone_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@id/sofa_check_ticket_img_foreground_icon"
+                android:layout_marginLeft="@dimen/provider_16dp"
+                android:layout_centerVertical="true"
+                android:textSize="@dimen/provider_font_size_24"
+                android:textColor="@color/provider_color_font_33"
+                tools:text="5660"/>
+
+        </RelativeLayout>
 
         <!-- 需要被替换成原有补票view -->
         <TextView
