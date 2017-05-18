@@ -328,9 +328,17 @@ public class CheckTicketSlideView extends RelativeLayout {
     }
 
     @Override
+    protected void onAttachedToWindow() {
+        logMessage("onAttachedToWindow");
+        super.onAttachedToWindow();
+        this.soundPlayer.load();
+    }
+
+    @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         endAllAnimations("onDetachedFromWindow");
+        this.soundPlayer.release();
     }
 
     public void setPhoneNumber(final CharSequence text) {

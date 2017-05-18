@@ -4,6 +4,7 @@ import android.content.Context;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Build;
+import android.util.Log;
 
 import java.util.HashMap;
 
@@ -28,13 +29,14 @@ public class CheckTicketSoundPlayer {
         } else {
             mSoundPool = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);
         }
-        this.initialize();
     }
 
-    private void initialize() {
+    public void load() {
+        Log.d("CheckTicketSoundPlayer", "before load mSounds: " + this.mSounds + " mSoundPool: " + mSoundPool);
         this.mSounds.put(SOUND_SLIDE, mSoundPool.load(this.mContext, R.raw.sofa_check_ticket_slide, 1));
         this.mSounds.put(SOUND_CHECKED, mSoundPool.load(this.mContext, R.raw.sofa_check_ticket_success, 1));
         this.mSounds.put(SOUND_UNCHECKED, mSoundPool.load(this.mContext, R.raw.sofa_check_ticket_cancel, 1));
+        Log.d("CheckTicketSoundPlayer", "after load mSounds: " + this.mSounds + " mSoundPool: " + mSoundPool);
     }
 
     public void playSlideSound() {
@@ -48,5 +50,12 @@ public class CheckTicketSoundPlayer {
 
     private void playSound(String soundName) {
         this.mSoundPool.play(this.mSounds.get(soundName), 1, 1, 1, 0, 1f);
+    }
+
+    public void release() {
+        Log.d("CheckTicketSoundPlayer", "before release mSounds: " + this.mSounds + " mSoundPool: " + mSoundPool);
+        this.mSoundPool.release();
+        this.mSounds.clear();
+        Log.d("CheckTicketSoundPlayer", "after release mSounds: " + this.mSounds + " mSoundPool: " + mSoundPool);
     }
 }
