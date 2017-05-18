@@ -26,6 +26,7 @@ import java.util.Locale;
  * @date 2017/3/16 18:14
  */
 public class CheckTicketSlideView extends RelativeLayout {
+    private CheckTicketSoundPlayer soundPlayer;
 
     public interface OnCheckStateChangedListener {
         void onCheckStateChanged(final CheckTicketSlideView view, final boolean checked);
@@ -56,6 +57,7 @@ public class CheckTicketSlideView extends RelativeLayout {
      * 当前的验票状态
      */
     private boolean mChecked;
+    private boolean mPlaySlideSound = true;
 
     private Animator mForegroundViewTranslateAnimator;
     private Animator mForegroundViewClickAnimator;
@@ -73,6 +75,8 @@ public class CheckTicketSlideView extends RelativeLayout {
         mActionClickThreshold = getResources().getDimensionPixelSize(R.dimen.provider_3dp);
 
         setChecked(false);
+
+        soundPlayer = new CheckTicketSoundPlayer(getContext().getApplicationContext());
     }
 
     private void initView() {
@@ -98,6 +102,7 @@ public class CheckTicketSlideView extends RelativeLayout {
                 endAllAnimations("onTouchEvent ACTION_DOWN");
                 mTouchEventStartX = (int) event.getX();
                 mTouchEventDeltaX = 0;
+                mPlaySlideSound = true;
                 break;
             case MotionEvent.ACTION_MOVE:
                 mTouchEventCurX = (int) event.getX();
@@ -109,6 +114,10 @@ public class CheckTicketSlideView extends RelativeLayout {
                     mForegroundLayout.setX(mTouchEventDeltaX);
                     scaleBackgroundInfoViewOnSlide();
                     fadeForegroundInfoViewOnSlide();
+                    // 滑动过程中，根据滑动距离是否达到确认操作阈值
+                    if (mForegroundLayout.getX() >= mActionConfirmThreshold) {
+                        playSlideSound();
+                    }
                 } else {
                     mForegroundLayout.setX(mForegroundViewInitialX);
                     mForegroundLayout.setAlpha(1f);
@@ -159,6 +168,17 @@ public class CheckTicketSlideView extends RelativeLayout {
         return true;
     }
 
+    private void playSlideSound() {
+        if (mPlaySlideSound) {
+            soundPlayer.playSlideSound();
+            mPlaySlideSound = false;
+        }
+    }
+
+    private void playCheckSound(boolean checked) {
+        soundPlayer.playCheckedSound(checked);
+    }
+
     private Animator confirmAction(final Animator.AnimatorListener listener) {
         // Translate & alpha out foreground view first
         final PropertyValuesHolder translateX = PropertyValuesHolder.ofFloat("X", mForegroundViewWidth);
@@ -180,6 +200,8 @@ public class CheckTicketSlideView extends RelativeLayout {
                 animation.removeListener(this);
                 // 先将 UI 变为目标状态；在整个动画结束后再更新状态值并发出通知
                 updateForegroundViewByCheckedState(!mChecked);
+                // 播放音效（注意这里的 mChecked 还是更新前的值）
+                playCheckSound(!mChecked);
                 mForegroundLayout.setX(mForegroundViewInitialX);
                 mForegroundLayout.setAlpha(1f);
             }
