@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/background_view"
+    android:layout_width="match_parent"
+    android:layout_height="60dp"
+    android:background="@drawable/sofa_bottom_bar_bg_normal_final_new">
+
+    <View
+        android:id="@+id/loading_view"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:background="@drawable/provider_common_icon_loading"
+        android:layout_centerInParent="true"/>
+
+    <com.romainpiel.shimmer.ShimmerTextView
+        android:id="@+id/foreground_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:textColor="@android:color/white"
+        android:gravity="center"
+        android:background="@drawable/sofa_bottom_bar_image_normal_final" />
+
+</RelativeLayout>

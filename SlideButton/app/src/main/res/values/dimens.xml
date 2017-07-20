@@ -5,4 +5,5 @@
     <dimen name="provider_6dp">6dp</dimen>
     <dimen name="provider_5dp">5dp</dimen>
     <dimen name="provider_2dp">2dp</dimen>
+    <dimen name="sofa_bottom_bar_corner_radius">3dp</dimen>
 </resources>
