@@ -25,5 +25,10 @@ public class NewSlideButtonSampleActivity extends AppCompatActivity {
                 }
             }
         });
+
+        slideButton.setStyle(new NewSlideButton.CustomStyle(
+                R.drawable.sofa_slide_button_foreground_blue,
+                R.drawable.sofa_slide_button_background_blue,
+                R.color.sofa_color_slide_button_shimmer_blue));
     }
 }

@@ -3,7 +3,7 @@
     android:id="@+id/background_view"
     android:layout_width="match_parent"
     android:layout_height="60dp"
-    android:background="@drawable/sofa_bottom_bar_bg_normal_final_new">
+    android:background="@drawable/sofa_slide_button_background_orange">
 
     <View
         android:id="@+id/loading_view"
@@ -18,6 +18,6 @@
         android:layout_height="match_parent"
         android:textColor="@android:color/white"
         android:gravity="center"
-        android:background="@drawable/sofa_bottom_bar_image_normal_final" />
+        android:background="@drawable/sofa_slide_button_foreground_orange" />
 
 </RelativeLayout>

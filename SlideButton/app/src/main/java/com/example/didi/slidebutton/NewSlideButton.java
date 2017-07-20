@@ -44,8 +44,8 @@ public class NewSlideButton extends RelativeLayout {
     private boolean mLoading = false;
     private Animator loadingAnimator;
 
-    private enum State{NORMAL, SLIDE}
-    private State mCurState = State.NORMAL;
+//    private enum State{NORMAL, SLIDE}
+//    private State mCurState = State.NORMAL;
 
     private CustomStyle mStyle = CustomStyle.DEFAULT_STYLE;
 
@@ -141,6 +141,12 @@ public class NewSlideButton extends RelativeLayout {
 
     public void setStyle(CustomStyle style) {
         this.mStyle = style;
+        onStyleChanged();
+    }
+
+    private void onStyleChanged() {
+        setViewResource(mStyle.getForegroundResId(), mStyle.getBackgroundResId());
+        setShimmerColor(mStyle.getShimmerColorResId());
     }
 
     private void logMsg(String s) {
@@ -239,7 +245,7 @@ public class NewSlideButton extends RelativeLayout {
         foregroundView.setX(x);
     }
 
-    private void setStyleSlide() {
+    /*private void setStyleSlide() {
         if (!checkStateValid(State.SLIDE)) {
             logMsg("setStyleSlide same style and return");
             return;
@@ -253,28 +259,25 @@ public class NewSlideButton extends RelativeLayout {
             return;
         }
         setState(State.NORMAL);
-    }
+    }*/
 
-    private void setState(State targetState) {
+    /*private void setState(State targetState) {
         mCurState = targetState;
         switch (mCurState) {
             case NORMAL:
-                setViewResource(mStyle.getForegroundNormalRes(), mStyle.getBackgroundNormalRes());
-                break;
-            case SLIDE:
-                setViewResource(mStyle.getForegroundSlideRes(), mStyle.getBackgroundSlideRes());
+                setViewResource(mStyle.getForegroundResId(), mStyle.getBackgroundResId());
                 break;
         }
-    }
-
-    private void setViewResource(int foregroundResId, int backgroundResId) {
-        foregroundView.setBackgroundResource(foregroundResId);
-        backgroundView.setBackgroundResource(backgroundResId);
     }
 
     private boolean checkStateValid(State targetState) {
         logMsg("checkStateValid curState: " + mCurState + " targetState: " + targetState);
         return mCurState != targetState;
+    }*/
+
+    private void setViewResource(int foregroundResId, int backgroundResId) {
+        foregroundView.setBackgroundResource(foregroundResId);
+        backgroundView.setBackgroundResource(backgroundResId);
     }
 
     private void onActionDown() {
@@ -284,12 +287,12 @@ public class NewSlideButton extends RelativeLayout {
 
     private void onActionMove() {
         logMsg("actionMove");
-        setStyleSlide();
+//        setStyleSlide();
     }
 
     private void onActionCancel() {
         logMsg("actionCancel");
-        setStyleNormal();
+//        setStyleNormal();
         startShimmer();
     }
 
@@ -312,56 +315,30 @@ public class NewSlideButton extends RelativeLayout {
 
     public static class CustomStyle {
         static final CustomStyle DEFAULT_STYLE = new CustomStyle(
-                new StyleResources(R.drawable.sofa_bottom_bar_image_normal_final, R.drawable.sofa_bottom_bar_image_slide_new),
-                new StyleResources(R.drawable.sofa_bottom_bar_bg_normal_final_new, R.drawable.sofa_bottom_bar_bg_slide_new),
-                R.color.sofa_color_bottom_bar_shimmer);
+                R.drawable.sofa_slide_button_foreground_orange,
+                R.drawable.sofa_slide_button_background_orange,
+                R.color.sofa_color_slide_button_shimmer_orange);
 
-        private StyleResources foregroundRes;
-        private StyleResources backgroundRes;
+        private int foregroundResId;
+        private int backgroundResId;
         private int shimmerColorResId;
 
-        CustomStyle(StyleResources foregroundRes, StyleResources backgroundRes, int shimmerColorResId) {
-            this.foregroundRes = foregroundRes;
-            this.backgroundRes = backgroundRes;
+        CustomStyle(int normalResId, int slideResId, int shimmerColorResId) {
+            this.foregroundResId = normalResId;
+            this.backgroundResId = slideResId;
             this.shimmerColorResId = shimmerColorResId;
         }
 
-        int getForegroundNormalRes() {
-            return foregroundRes.getNormalResId();
+        int getForegroundResId() {
+            return foregroundResId;
         }
 
-        int getForegroundSlideRes() {
-            return foregroundRes.getSlideResId();
-        }
-
-        int getBackgroundNormalRes() {
-            return backgroundRes.getNormalResId();
-        }
-
-        int getBackgroundSlideRes() {
-            return backgroundRes.getSlideResId();
+        int getBackgroundResId() {
+            return backgroundResId;
         }
 
         public int getShimmerColorResId() {
             return shimmerColorResId;
-        }
-    }
-
-    public static class StyleResources {
-        private int normalResId;
-        private int slideResId;
-
-        public StyleResources(int normalResId, int slideResId) {
-            this.normalResId = normalResId;
-            this.slideResId = slideResId;
-        }
-
-        int getNormalResId() {
-            return normalResId;
-        }
-
-        int getSlideResId() {
-            return slideResId;
         }
     }
 }

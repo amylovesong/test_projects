@@ -12,4 +12,11 @@
     <color name="sofa_color_bottom_bar_normal_final">#F5813E</color>
     <color name="sofa_color_bottom_bar_slide">#F3742A</color>
     <color name="sofa_color_bottom_bar_shimmer">#99FA8919</color>
+
+    <!-- New slide button colors-->
+    <color name="sofa_color_slide_button_background_orange">#F3742A</color>
+    <color name="sofa_color_slide_button_shimmer_orange">#99FC9153</color>
+
+    <color name="sofa_color_slide_button_background_blue">#414454</color>
+    <color name="sofa_color_slide_button_shimmer_blue">#994A4C5B</color>
 </resources>
