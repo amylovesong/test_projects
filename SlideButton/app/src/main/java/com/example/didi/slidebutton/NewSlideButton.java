@@ -44,9 +44,6 @@ public class NewSlideButton extends RelativeLayout {
     private boolean mLoading = false;
     private Animator loadingAnimator;
 
-//    private enum State{NORMAL, SLIDE}
-//    private State mCurState = State.NORMAL;
-
     private CustomStyle mStyle = CustomStyle.DEFAULT_STYLE;
 
     public NewSlideButton(Context context) {
@@ -245,36 +242,6 @@ public class NewSlideButton extends RelativeLayout {
         foregroundView.setX(x);
     }
 
-    /*private void setStyleSlide() {
-        if (!checkStateValid(State.SLIDE)) {
-            logMsg("setStyleSlide same style and return");
-            return;
-        }
-        setState(State.SLIDE);
-    }
-
-    private void setStyleNormal() {
-        if (!checkStateValid(State.NORMAL)) {
-            logMsg("setStyleNormal same style and return");
-            return;
-        }
-        setState(State.NORMAL);
-    }*/
-
-    /*private void setState(State targetState) {
-        mCurState = targetState;
-        switch (mCurState) {
-            case NORMAL:
-                setViewResource(mStyle.getForegroundResId(), mStyle.getBackgroundResId());
-                break;
-        }
-    }
-
-    private boolean checkStateValid(State targetState) {
-        logMsg("checkStateValid curState: " + mCurState + " targetState: " + targetState);
-        return mCurState != targetState;
-    }*/
-
     private void setViewResource(int foregroundResId, int backgroundResId) {
         foregroundView.setBackgroundResource(foregroundResId);
         backgroundView.setBackgroundResource(backgroundResId);
@@ -287,12 +254,10 @@ public class NewSlideButton extends RelativeLayout {
 
     private void onActionMove() {
         logMsg("actionMove");
-//        setStyleSlide();
     }
 
     private void onActionCancel() {
         logMsg("actionCancel");
-//        setStyleNormal();
         startShimmer();
     }
 
