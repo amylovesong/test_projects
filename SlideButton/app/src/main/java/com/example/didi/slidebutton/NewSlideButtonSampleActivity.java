@@ -26,9 +26,18 @@ public class NewSlideButtonSampleActivity extends AppCompatActivity {
             }
         });
 
-        slideButton.setStyle(new NewSlideButton.CustomStyle(
-                R.drawable.sofa_slide_button_foreground_blue,
-                R.drawable.sofa_slide_button_background_blue,
-                R.color.sofa_color_slide_button_shimmer_blue));
+        ((SwitchCompat)findViewById(R.id.switch_button_change_style)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    slideButton.setStyle(new NewSlideButton.CustomStyle(
+                            R.drawable.sofa_slide_button_foreground_blue,
+                            R.drawable.sofa_slide_button_background_blue,
+                            R.color.sofa_color_slide_button_shimmer_blue));
+                } else {
+                    slideButton.setStyle(NewSlideButton.CustomStyle.DEFAULT_STYLE);
+                }
+            }
+        });
     }
 }

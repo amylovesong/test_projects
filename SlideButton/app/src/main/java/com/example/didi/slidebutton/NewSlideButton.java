@@ -5,7 +5,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.RelativeLayout;
+import android.widget.FrameLayout;
 
 import com.didichuxing.sofa.animation.Animator;
 import com.didichuxing.sofa.animation.SofaAnimatorCompat;
@@ -16,7 +16,7 @@ import com.romainpiel.shimmer.ShimmerTextView;
  * @author sxl  (sunxiaoling@didichuxing.com)
  * @date 2017/7/19 18:28
  */
-public class NewSlideButton extends RelativeLayout {
+public class NewSlideButton extends FrameLayout {
     private final float ACTION_CONFIRM_DISTANCE_FRACTION = 0.3f;
 
     private static final String TAG = "NewSlideButton";
@@ -60,15 +60,15 @@ public class NewSlideButton extends RelativeLayout {
     }
 
     private void init() {
-        inflate(getContext(), R.layout.new_slide_button, this);
+        final View rootView = inflate(getContext(), R.layout.new_slide_button, this);
         foregroundView = (ShimmerTextView) findViewById(R.id.foreground_view);
-        backgroundView = findViewById(R.id.background_view);
+        backgroundView = rootView;/*findViewById(R.id.background_view);*/
         loadingView = findViewById(R.id.loading_view);
 
         foregroundView.setClickable(false);
         loadingView.setVisibility(GONE);
         setText("右滑开始自由接单");
-        setShimmerColor(mStyle.getShimmerColorResId());
+        setStyle(mStyle);
 
         initShimmer();
         initLoadingAnimation();
@@ -202,7 +202,7 @@ public class NewSlideButton extends RelativeLayout {
         final float targetX = mViewInitialX + mViewWidth;
         final int duration = (int) (Math.abs(targetX - curX) / mViewWidth * 1000);
         SofaAnimatorCompat
-                .play(NewSlideButton.this).property("SlideX", curX, targetX).duration(duration)
+                .play(NewSlideButton.this).property("SlideX", curX, targetX).duration(duration).decelerate()
                 .withListener(new com.didichuxing.sofa.animation.AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animator, View view) {
@@ -245,6 +245,13 @@ public class NewSlideButton extends RelativeLayout {
     private void setViewResource(int foregroundResId, int backgroundResId) {
         foregroundView.setBackgroundResource(foregroundResId);
         backgroundView.setBackgroundResource(backgroundResId);
+    }
+
+    private void ensureForegroundAtInitialX() {
+        logMsg("ensureForegroundViewPosition mSlideX: " + mSlideX + ", mViewInitialX: " + mViewInitialX);
+        if (mSlideX != mViewInitialX) {
+            setSlideX(mViewInitialX);
+        }
     }
 
     private void onActionDown() {

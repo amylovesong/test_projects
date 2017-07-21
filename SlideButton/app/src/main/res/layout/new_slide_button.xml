@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/background_view"
     android:layout_width="match_parent"
     android:layout_height="60dp"
@@ -10,7 +10,7 @@
         android:layout_width="26dp"
         android:layout_height="26dp"
         android:background="@drawable/provider_common_icon_loading"
-        android:layout_centerInParent="true"/>
+        android:layout_gravity="center"/>
 
     <com.romainpiel.shimmer.ShimmerTextView
         android:id="@+id/foreground_view"
@@ -20,4 +20,4 @@
         android:gravity="center"
         android:background="@drawable/sofa_slide_button_foreground_orange" />
 
-</RelativeLayout>
+</merge>
