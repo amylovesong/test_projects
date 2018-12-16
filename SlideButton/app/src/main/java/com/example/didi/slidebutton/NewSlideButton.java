@@ -207,7 +207,7 @@ public class NewSlideButton extends FrameLayout {
                     @Override
                     public void onAnimationEnd(Animator animator, View view) {
                         super.onAnimationEnd(animator, view);
-                        actionConfirmed();
+                        onActionConfirmed();
                     }
                 })
                 .build().start();
@@ -268,7 +268,7 @@ public class NewSlideButton extends FrameLayout {
         startShimmer();
     }
 
-    private void actionConfirmed() {
+    private void onActionConfirmed() {
         logMsg("actionConfirmed");
         startLoading();
     }
